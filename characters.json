@@ -1,0 +1,13 @@
+{
+    "493555133183950859": {
+        "Name": "Thalizard",
+        "Level": 1,
+        "Xp": 201,
+        "Health": 100,
+        "MaxHealth": 100,
+        "Defense": 10,
+        "Attack": 5,
+        "Inventory": [],
+        "XpToLevelUp": 100
+    }
+}
