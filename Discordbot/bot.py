@@ -212,6 +212,7 @@ def take_damage(user_id, damage): # A define to be called later on when the user
 def Level_up(user_id): # If the user has enough xp (Checked with Check_Level_Up) Levels up the user and increases its stats
 
     if user_id in characters:
+        
         character = characters[user_id]
 
         print(f"Leveling up {user_id}... Current level: {character['Level']}, XP: {character['Xp']}")  # Debugging
@@ -252,11 +253,11 @@ def get_monsters_for_area(area): # List of monsters and the areas they are in
 
     areas = {
         'Forest': [
-            {'Name': 'Bunny', 'Health': 10, 'Attack': 11, 'Defense': 1, 'XpReward': 10, 'Rarity': 'common'},
-            {'Name': 'Wolf', 'Health': 15, 'Attack': 11, 'Defense': 2, 'XpReward': 20, 'Rarity': 'common'},
-            {'Name': 'Boar', 'Health': 20, 'Attack': 15, 'Defense': 2, 'XpReward': 30, 'Rarity': 'uncommon'},
-            {'Name': 'Treant', 'Health': 20, 'Attack': 11, 'Defense': 1, 'XpReward': 35, 'Rarity': 'rare'},
-            {'Name': 'Wolf King', 'Health': 25, 'Attack': 20, 'Defense': 3, 'XpReward': 100, 'Rarity': 'legendary'}
+            {'Name': 'Bunny', 'Health': 1, 'Attack': 11, 'Defense': 1, 'XpReward': 10, 'Rarity': 'common'},
+            {'Name': 'Wolf', 'Health': 1, 'Attack': 11, 'Defense': 2, 'XpReward': 20, 'Rarity': 'common'},
+            {'Name': 'Boar', 'Health': 2, 'Attack': 15, 'Defense': 2, 'XpReward': 30, 'Rarity': 'uncommon'},
+            {'Name': 'Treant', 'Health': 2, 'Attack': 11, 'Defense': 1, 'XpReward': 35, 'Rarity': 'rare'},
+            {'Name': 'Wolf King', 'Health': 2, 'Attack': 20, 'Defense': 3, 'XpReward': 100, 'Rarity': 'legendary'}
         ],
         'Cave': [
             {'Name': 'Bat', 'Health': 80, 'Attack': 12, 'Defense': 5, 'XpReward': 50, 'Rarity': 'common'},
