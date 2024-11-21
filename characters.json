@@ -1,8 +1,19 @@
 {
     "493555133183950859": {
-        "Name": "Thalizard",
+        "Name": "Thalivar",
         "Level": 1,
-        "Xp": 321,
+        "Xp": 136,
+        "Health": 100,
+        "MaxHealth": 100,
+        "Defense": 10,
+        "Attack": 5,
+        "Inventory": [],
+        "XpToLevelUp": 100
+    },
+    "1161792953983979612": {
+        "Name": "mygiiee",
+        "Level": 1,
+        "Xp": 0,
         "Health": 100,
         "MaxHealth": 100,
         "Defense": 10,

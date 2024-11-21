@@ -212,7 +212,6 @@ def take_damage(user_id, damage): # A define to be called later on when the user
 def Level_up(user_id): # If the user has enough xp (Checked with Check_Level_Up) Levels up the user and increases its stats
 
     if user_id in characters:
-        
         character = characters[user_id]
 
         print(f"Leveling up {user_id}... Current level: {character['Level']}, XP: {character['Xp']}")  # Debugging
