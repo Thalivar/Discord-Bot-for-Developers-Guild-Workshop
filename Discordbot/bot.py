@@ -193,36 +193,6 @@ def initialize_database():
 # Call this to initialize the database
 initialize_database()
 
-def migrate_json_to_sqlite(json_file, db_file):
-    # Load JSON data
-    with open(json_file, 'r') as f:
-        characters = json.load(f)
-
-    # Connect to SQLite database
-    conn = sqlite3.connect(db_file)
-    cursor = conn.cursor()
-
-    # Insert characters and inventory into the database
-    for user_id, character in characters.items():
-        # Insert character data
-        cursor.execute('''
-        INSERT OR REPLACE INTO characters (user_id, name, level, xp, health, max_health, defense, attack, xp_to_level_up)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            user_id,
-            character['Name'],
-            character['Level'],
-            character['Xp'],
-            character['Health'],
-            character['MaxHealth'],
-            character['Defense'],
-            character['Attack'],
-            character['XpToLevelUp']
-        ))
-
-    conn.commit()
-    conn.close()
-
 @client.command() # Help message for the commands for the rpg game.
 async def rpghelp(ctx):
     rpghelp_message = """
@@ -276,6 +246,15 @@ def load_character(user_id):
 
     conn.close()
     return character
+
+def reset_character(user_id):
+
+    with sqlite3.connect("rpg_game.db") as conn:
+
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM characters WHERE user_id = ?", (user_id,))
+        conn.commit()
+
 
 def save_characters(user_id, character):
     conn = sqlite3.connect('rpg_game.db')
@@ -368,50 +347,45 @@ def get_monsters_for_area(area): # List of monsters and the areas they are in
     }
     return areas.get(area, None)
 
-def Check_Level_Up(user_id):
-
-    character = load_character(user_id)
-
-    if not character:
-        return False
-
-    # Debugging
-    print(f"Checking level-up for {character['Name']} - XP: {character['Xp']}, XPToLevelUp: {character['XpToLevelUp']}")
-
-    # Check if XP is sufficient for level-up
-    leveled_up = False
-    while character['Xp'] >= character['XpToLevelUp']:  # Allow multiple levels if XP is high enough
-        character['Xp'] -= character['XpToLevelUp']  # Deduct XP required for the level-up
-        Level_up(user_id)  # Perform the level-up
-        leveled_up = True
-
-    save_characters(user_id, character)  # Save updated character data
-    return leveled_up
-
-
-
 def Level_up(user_id):
-
     character = load_character(user_id)
 
     if not character:
         return False
 
-    # Debugging
-    print(f"Leveling up {character['Name']} - Current Level: {character['Level']}, XP: {character['Xp']}, XPToLevelUp: {character['XpToLevelUp']}")
-
+    # Apply level-up changes
     character['Level'] += 1
     character['Attack'] += 2
     character['MaxHealth'] += 20
     character['Defense'] += 1
-    character['XpToLevelUp'] = int(character['XpToLevelUp'] * 1.2)  # Increase XP required for next level
-    character['Health'] = character['MaxHealth']  # Reset health to max
+    character['XpToLevelUp'] = int(character['XpToLevelUp'] * 1.2)  # Increase XP for next level
+    character['Health'] = character['MaxHealth']  # Restore health
+
+    # Save changes
+    save_characters(user_id, character)
 
     print(f"New stats: Level {character['Level']}, Attack {character['Attack']}, MaxHealth {character['MaxHealth']}, Defense {character['Defense']}, Next XPToLevelUp: {character['XpToLevelUp']}")
 
-    save_characters(user_id, character)
     return True
 
+def Check_Level_Up(user_id):
+    character = load_character(user_id)
+
+    if not character:
+        return False
+
+    leveled_up = False
+    while character['Xp'] >= character['XpToLevelUp']:
+        # Deduct XP required for level-up
+        character['Xp'] -= character['XpToLevelUp']
+        Level_up(user_id)  # Perform the level-up
+        leveled_up = True
+
+        # Reload character after level-up to ensure accurate state
+        character = load_character(user_id)
+
+    save_characters(user_id, character)
+    return leveled_up
 
 
 async def battle(ctx, user_id, area):
@@ -419,8 +393,7 @@ async def battle(ctx, user_id, area):
     monster = Spawn_Monster(area)
 
     if not monster:
-        await ctx.send("No monsters found in this area!")
-        return
+        return "No monsters found in this area!"
 
     await ctx.send(f"A wild {monster['Name']} has appeared! Prepare for battle.")
 
@@ -435,11 +408,9 @@ async def battle(ctx, user_id, area):
 
             # Check for level-up
             if Check_Level_Up(user_id):
-                await ctx.send(f"{character['Name']} defeated {monster['Name']} and leveled up!")
+                return f"{character['Name']} defeated {monster['Name']} and leveled up!"
             else:
-                await ctx.send(f"{character['Name']} defeated {monster['Name']}! XP: {character['Xp']}/{character['XpToLevelUp']}")
-
-            return
+                return f"{character['Name']} defeated {monster['Name']}! XP: {character['Xp']}/{character['XpToLevelUp']}"
 
         # Monster retaliates
         damage_to_player = max(monster['Attack'] - character['Defense'], 1)
@@ -447,10 +418,10 @@ async def battle(ctx, user_id, area):
 
         if character['Health'] == 0:
             save_characters(user_id, character)
-            await ctx.send(f"{character['Name']} was defeated by {monster['Name']}.")
-            return
+            return f"{character['Name']} was defeated by {monster['Name']}."
 
-
+    # Fallback message (should not reach here)
+    return "Battle ended unexpectedly."
 
 def Spawn_Monster(area): 
     # Balanced monster generation with corrected weighting
@@ -504,9 +475,10 @@ async def start(ctx):
         await ctx.send("You took too long to choose a name. Please try again.")
 
 
-@client.command() # Command to show the users profile
+@client.command()
 async def profile(ctx):
 
+    await asyncio.sleep(0.5)  # Optional delay to ensure database updates are complete
     user_id = str(ctx.author.id)
     
     if not is_user_in_database(user_id):
@@ -515,30 +487,27 @@ async def profile(ctx):
 
     character = load_character(user_id)
 
-    xp_bar_length= 15 # Sets the size of the xpbar
-    xp_progress = character['Xp'] / character['XpToLevelUp'] # Sets how far the user is into leveling
-    xp_filled = int(xp_progress * xp_bar_length) # Sets how far the bar will be filled
-    xp_empty = xp_bar_length - xp_filled # Sets the amount of empty spaces in the bar
+    xp_bar_length = 15
+    xp_progress = character['Xp'] / character['XpToLevelUp']
+    xp_filled = int(xp_progress * xp_bar_length)
+    xp_empty = xp_bar_length - xp_filled
 
-    xp_bar = f"[{'#' * xp_filled}{' ' * xp_empty}] {character['Xp']} / {character['XpToLevelUp']}" # String to show how far the user is into leveling
+    xp_bar = f"[{'#' * xp_filled}{' ' * xp_empty}] {character['Xp']} / {character['XpToLevelUp']}"
 
-    # String to display the users profile
     profile_message = (
-        f"**Profile of {character['Name']}**\n" # Says who's profile it is
-        f"**Level:** {character['Level']}\n" # Says the level of the user
-        f"**Xp:** {xp_bar}\n" # Shows the xp bar of the user
-        f"**Health:** {character['Health']}/{character['MaxHealth']}\n" # Says the health and maxhealth of the user
-        f"**Defense:** {character['Defense']}\n" # How much defense the user has
-        f"**Attack:** {character['Attack']}\n" # How much attack the user has
-        f"**Inventory:** {', '.join(character['Inventory']) if character['Inventory'] else 'Is empty'}" # The items the user has in his inventory
+        f"**Profile of {character['Name']}**\n"
+        f"**Level:** {character['Level']}\n"
+        f"**Xp:** {xp_bar}\n"
+        f"**Health:** {character['Health']}/{character['MaxHealth']}\n"
+        f"**Defense:** {character['Defense']}\n"
+        f"**Attack:** {character['Attack']}\n"
+        f"**Inventory:** {', '.join(character['Inventory']) if character['Inventory'] else 'Is empty'}"
     )
 
     await ctx.send(profile_message)
 
 @client.command()
-
 async def fight(ctx, area: str):
-
     user_id = str(ctx.author.id)
 
     if not is_user_in_database(user_id):
@@ -549,34 +518,61 @@ async def fight(ctx, area: str):
     monster = Spawn_Monster(area)
 
     if not monster:
-        await ctx.send(f"Somebody already took all the bounty's for this area. Please try another one")
+        await ctx.send("Somebody already took all the bounty's for this area. Please try another one.")
         return
 
     print(f"Character: {character['Name']} - Monster: {monster['Name']}")  # Debugging
 
-    # Debug: Ensure the battle function is being called
-    await ctx.send(f"A wild {monster['Name']} has appeared! Prepare for battle.")
-
-    result = await battle(character, monster)
+    result = await battle(ctx, user_id, area)  # Pass the `ctx` to allow messaging
     await ctx.send(result)
 
     if Check_Level_Up(user_id):
         await ctx.send(f"Congratulations {character['Name']}! You have leveled up!")
-        save_characters()
+
 
 @client.command()
 async def testlevelup(ctx):
     user_id = str(ctx.author.id)
 
     character = load_character(user_id)
-    character['Xp'] = character['XpToLevelUp'] + 1  # Set XP to trigger level-up
-    save_characters()
+    if not character:
+        await ctx.send("You don't have a character. Use `.start` to create one.")
+        return
+
+    # Give XP to trigger a level-up
+    character['Xp'] = character['XpToLevelUp'] + 1
+    save_characters(user_id, character)
 
     if Check_Level_Up(user_id):
+        character = load_character(user_id)  # Reload to get updated state
         await ctx.send(f"Level-up successful! {character['Name']} is now Level {character['Level']}. XP: {character['Xp']}, Next Level XP: {character['XpToLevelUp']}")
     else:
         await ctx.send("Level-up failed.")
 
+
+@client.command()
+async def resetdata(ctx):
+    user_id = str(ctx.author.id)
+
+    if not is_user_in_database:
+        await ctx.send(f"You are not registed in the guild you cant reset your data. Register with '.start'.")
+        return
+
+    await ctx.send(f"Are you sure you want to leave te guild? Write down 'yes' to confirm.")
+
+    def check(m):
+        return m.author == ctx.author and m.channel == ctx.channel and m.content.lower() == "yes"
+    
+    try:
+
+        await client.wait_for("message", check=check, timeout=30)
+
+        reset_character(user_id)
+        await ctx.send(f"You're officially out of the guild. If you ever want to return rype '.start'.")
+
+    except asyncio.TimeoutError:
+
+        await ctx.send(f"You took to long to decide if you really want to leave the guild.")
 
 # Fight system:
 # Make about 3 areas each different in difficulty
