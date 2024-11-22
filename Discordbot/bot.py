@@ -8,6 +8,7 @@ import random
 import time
 import sys
 import json
+import sqlite3
 
 #Main ideas
 #Connect it to git/github
@@ -156,6 +157,72 @@ async def rps(ctx, choice: str):
 # Get things like healing potions/ "Buff" potions to increase attack/ defense and health above the normal limit
 # Maybe try to add something like magic
 
+# Initialize the database
+def initialize_database():
+    conn = sqlite3.connect('rpg_game.db')
+    cursor = conn.cursor()
+
+    # Creates the characters table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS characters (
+        user_id TEXT PRIMARY KEY,
+        name TEXT,
+        level INTEGER,
+        xp INTEGER,
+        health INTEGER,
+        max_health INTEGER,
+        defense INTEGER,
+        attack INTEGER,
+        xp_to_level_up INTEGER
+    )
+    ''')
+
+    # Creates the inventory table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS inventory (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT,
+        item TEXT,
+        FOREIGN KEY (user_id) REFERENCES characters (user_id)
+    )
+    ''')
+
+    conn.commit()
+    conn.close()
+
+# Call this to initialize the database
+initialize_database()
+
+def migrate_json_to_sqlite(json_file, db_file):
+    # Load JSON data
+    with open(json_file, 'r') as f:
+        characters = json.load(f)
+
+    # Connect to SQLite database
+    conn = sqlite3.connect(db_file)
+    cursor = conn.cursor()
+
+    # Insert characters and inventory into the database
+    for user_id, character in characters.items():
+        # Insert character data
+        cursor.execute('''
+        INSERT OR REPLACE INTO characters (user_id, name, level, xp, health, max_health, defense, attack, xp_to_level_up)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            user_id,
+            character['Name'],
+            character['Level'],
+            character['Xp'],
+            character['Health'],
+            character['MaxHealth'],
+            character['Defense'],
+            character['Attack'],
+            character['XpToLevelUp']
+        ))
+
+    conn.commit()
+    conn.close()
+
 @client.command() # Help message for the commands for the rpg game.
 async def rpghelp(ctx):
     rpghelp_message = """
@@ -165,49 +232,111 @@ async def rpghelp(ctx):
     ".fight" - To fight monsters for the guild"""
     await ctx.send(rpghelp_message)
 
-def load_characters(): # A define to load the characters from the json
-    if os.path.exists('characters.json'):
-        with open ('characters.json', 'r') as f:
-            return json.load(f)
-    return {}
+def is_user_in_database(user_id):
 
-characters = load_characters()
+    conn = sqlite3.connect('rpg_game.db')
+    cursor = conn.cursor()
 
-def save_characters():
-    """Save all characters to the JSON file."""
-    with open('characters.json', 'w') as f:
-        json.dump(characters, f, indent=4)
-        print("Character data saved!")  # Debugging to confirm the file is being saved
+    # Query the database for the user ID
+    cursor.execute('SELECT 1 FROM characters WHERE user_id = ? LIMIT 1', (user_id,))
+    user_exists = cursor.fetchone() is not None  # Returns True if a row exists
 
-def create_character(user_id, custom_name): # the name and stats that are saved in the json
+    conn.close()
+    return user_exists
 
-    characters[user_id] = {
-        
-        'Name': custom_name, # The characters name
-        'Level': 1, # The level of the character
-        'Xp': 0, # How much xp the character has
-        'Health': 100, # How much current health the character has
-        'MaxHealth':100, # What the max health of the character is
-        'Defense': 10, # What defense stat the character has
-        'Attack': 5, # How much damage the character does
-        'Inventory': [], # Shows what the character has in his inventory
-        'XpToLevelUp': 100 # The amount it takes to levelup each level (The amount needed will increase each level)
+def load_character(user_id):
+    conn = sqlite3.connect('rpg_game.db')
+    cursor = conn.cursor()
+
+    # Fetch character data
+    cursor.execute('SELECT * FROM characters WHERE user_id = ?', (user_id,))
+    character_row = cursor.fetchone()
+
+    if not character_row:
+        conn.close()
+        return None
+
+    # Convert row into a dictionary
+    character = {
+        'Name': character_row[1],
+        'Level': character_row[2],
+        'Xp': character_row[3],
+        'Health': character_row[4],
+        'MaxHealth': character_row[5],
+        'Defense': character_row[6],
+        'Attack': character_row[7],
+        'XpToLevelUp': character_row[8],
+        'Inventory': []
     }
-    save_characters()
+
+    # Fetch inventory items
+    cursor.execute('SELECT item FROM inventory WHERE user_id = ?', (user_id,))
+    items = cursor.fetchall()
+    character['Inventory'] = [item[0] for item in items]
+
+    conn.close()
+    return character
+
+def save_characters(user_id, character):
+    conn = sqlite3.connect('rpg_game.db')
+    cursor = conn.cursor()
+
+    # Update character data
+    cursor.execute('''
+    INSERT OR REPLACE INTO characters (user_id, name, level, xp, health, max_health, defense, attack, xp_to_level_up)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        user_id,
+        character['Name'],
+        character['Level'],
+        character['Xp'],
+        character['Health'],
+        character['MaxHealth'],
+        character['Defense'],
+        character['Attack'],
+        character['XpToLevelUp']
+    ))
+
+    # Update inventory
+    cursor.execute('DELETE FROM inventory WHERE user_id = ?', (user_id,))
+    for item in character['Inventory']:
+        cursor.execute('INSERT INTO inventory (user_id, item) VALUES (?, ?)', (user_id, item))
+
+    conn.commit()
+    conn.close()
+
+
+def create_character(user_id, custom_name):
+    character = {
+        'Name': custom_name,
+        'Level': 1,
+        'Xp': 0,
+        'Health': 100,
+        'MaxHealth': 100,
+        'Defense': 10,
+        'Attack': 5,
+        'Inventory': [],
+        'XpToLevelUp': 100
+    }
+
+    # Save the character to the database
+    save_characters(user_id, character)
+
+    # Debugging
+    print(f"Character created for user_id={user_id}: {character}")
+
+
 
 def take_damage(user_id, damage): # A define to be called later on when the users sends his character to fight something
     
-    if user_id in characters: # Checks if the user is in the json file
-        character = characters[user_id]
+    character = load_character(user_id)
         
-        new_health = character['Health'] - damage # Sets the newHealth to the character current health - the damage it took
-        
-        if new_health < 0: # Incase health goes under 0 sets it back to 0
-            new_health = 0
+    new_health = character['Health'] - damage # Sets the newHealth to the character current health - the damage it took        
+    if new_health < 0: # Incase health goes under 0 sets it back to 0          new_health = 0
         
         character['Health'] = new_health # Attaches the new health back to the character
         
-        save_characters() # Saves the file to the json
+    save_characters() # Saves the file to the json
 
 def get_monsters_for_area(area): # List of monsters and the areas they are in
 
@@ -239,120 +368,152 @@ def get_monsters_for_area(area): # List of monsters and the areas they are in
     }
     return areas.get(area, None)
 
-def Check_Level_Up(user_id):  
-    # Ensure user exists
-    if user_id in characters:
-        character = characters[user_id]
-        
-        # Debugging: Check XP and level-up threshold
-        print(f"Checking level-up for {character['Name']} - XP: {character['Xp']}, XPToLevelUp: {character['XpToLevelUp']}")
+def Check_Level_Up(user_id):
 
-        # Check if XP is sufficient for level-up
-        while character['Xp'] >= character['XpToLevelUp']:  # Allow multiple levels if XP is high enough
-            character['Xp'] -= character['XpToLevelUp']  # Deduct XP required for the level-up
-            Level_up(user_id)  # Perform the level-up
+    character = load_character(user_id)
 
-            print(f"{character['Name']} leveled up! New Level: {character['Level']}, Remaining XP: {character['Xp']}")  # Debugging
+    if not character:
+        return False
 
-        save_characters()  # Save updated data to JSON
-        return True
-    return False
+    # Debugging
+    print(f"Checking level-up for {character['Name']} - XP: {character['Xp']}, XPToLevelUp: {character['XpToLevelUp']}")
+
+    # Check if XP is sufficient for level-up
+    leveled_up = False
+    while character['Xp'] >= character['XpToLevelUp']:  # Allow multiple levels if XP is high enough
+        character['Xp'] -= character['XpToLevelUp']  # Deduct XP required for the level-up
+        Level_up(user_id)  # Perform the level-up
+        leveled_up = True
+
+    save_characters(user_id, character)  # Save updated character data
+    return leveled_up
+
 
 
 def Level_up(user_id):
-    if user_id in characters:
-        character = characters[user_id]
 
-        # Debugging
-        print(f"Leveling up {character['Name']} - Current Level: {character['Level']}, XP: {character['Xp']}, XPToLevelUp: {character['XpToLevelUp']}")
+    character = load_character(user_id)
 
-        character['Level'] += 1
-        character['Attack'] += 2
-        character['MaxHealth'] += 20
-        character['Defense'] += 1
-        character['XpToLevelUp'] = int(character['XpToLevelUp'] * 1.2)
-        character['Health'] = character['MaxHealth']
+    if not character:
+        return False
 
-        print(f"New stats: Level {character['Level']}, Attack {character['Attack']}, MaxHealth {character['MaxHealth']}, Defense {character['Defense']}, Next XPToLevelUp: {character['XpToLevelUp']}")
+    # Debugging
+    print(f"Leveling up {character['Name']} - Current Level: {character['Level']}, XP: {character['Xp']}, XPToLevelUp: {character['XpToLevelUp']}")
 
-        save_characters()
-        return True
-    return False
+    character['Level'] += 1
+    character['Attack'] += 2
+    character['MaxHealth'] += 20
+    character['Defense'] += 1
+    character['XpToLevelUp'] = int(character['XpToLevelUp'] * 1.2)  # Increase XP required for next level
+    character['Health'] = character['MaxHealth']  # Reset health to max
+
+    print(f"New stats: Level {character['Level']}, Attack {character['Attack']}, MaxHealth {character['MaxHealth']}, Defense {character['Defense']}, Next XPToLevelUp: {character['XpToLevelUp']}")
+
+    save_characters(user_id, character)
+    return True
 
 
-async def battle(character, monster):
+
+async def battle(ctx, user_id, area):
+    character = load_character(user_id)
+    monster = Spawn_Monster(area)
+
+    if not monster:
+        await ctx.send("No monsters found in this area!")
+        return
+
+    await ctx.send(f"A wild {monster['Name']} has appeared! Prepare for battle.")
+
     while character['Health'] > 0 and monster['Health'] > 0:
         # Player attacks
         damage_to_monster = max(character['Attack'] - monster['Defense'], 1)
         monster['Health'] -= damage_to_monster
+
         if monster['Health'] <= 0:
             character['Xp'] += monster['XpReward']
-            print(f"{character['Name']} gained {monster['XpReward']} XP! Total XP: {character['Xp']}")  # Debugging
+            save_characters(user_id, character)  # Save XP update
 
-            save_characters()  # Ensure XP is saved before level-up check
-            if Check_Level_Up(str(character['Name'])):  # Trigger level-up
-                return f"{character['Name']} defeated {monster['Name']} and leveled up!"
-            return f"{character['Name']} defeated {monster['Name']}! XP: {character['Xp']}"
+            # Check for level-up
+            if Check_Level_Up(user_id):
+                await ctx.send(f"{character['Name']} defeated {monster['Name']} and leveled up!")
+            else:
+                await ctx.send(f"{character['Name']} defeated {monster['Name']}! XP: {character['Xp']}/{character['XpToLevelUp']}")
+
+            return
 
         # Monster retaliates
         damage_to_player = max(monster['Attack'] - character['Defense'], 1)
         character['Health'] = max(0, character['Health'] - damage_to_player)
+
         if character['Health'] == 0:
-            save_characters()  # Save health update
-            return f"{character['Name']} was defeated by {monster['Name']}."
+            save_characters(user_id, character)
+            await ctx.send(f"{character['Name']} was defeated by {monster['Name']}.")
+            return
+
 
 
 def Spawn_Monster(area): 
     # Balanced monster generation with corrected weighting
     monsters = get_monsters_for_area(area)
+
     if not monsters:
         return None
     rarity_weights = {'common': 10, 'uncommon': 6, 'rare': 3, 'epic': 1, 'legendary': 0.5}
     total_weight = sum(rarity_weights[m['Rarity']] for m in monsters)
     random_choice = random.uniform(0, total_weight)
     cumulative_weight = 0
+
     for monster in monsters:
         cumulative_weight += rarity_weights[monster['Rarity']]
         if random_choice <= cumulative_weight:
             return monster
+        
     return None           
 
-@client.command() # Command to start the game and create your character.
+@client.command()
 async def start(ctx):
     user_id = str(ctx.author.id)
 
-    # Checks if the user already has a character
-    if user_id in characters:
-        await ctx.send(f"You already have a character, {ctx.author.name}.")
+    # Check if the user already exists in the database
+    if is_user_in_database(user_id):
+        await ctx.send(f"You are already in the guild, adventurer.")
         return
-    
-    # Asks the user to input their name
-    await ctx.send(f"Welcome adventurer! Please write down your preferred name in the guild list:") 
+
+    await ctx.send(f"Welcome adventurer! Please write down your preferred name in the guild list:")
 
     def check(msg):
-        return msg.author == ctx.author and len(msg.content) > 0  # Checks if the message is from the user and not empty
-    
+        return msg.author == ctx.author and len(msg.content) > 0
+
     try:
         # Wait for the user's response for the custom name
-        name_msg = await client.wait_for('message', check=check, timeout=30.0)  # Timeout after 30 seconds
-        custom_name = name_msg.content # Sets the custom name to what the user has said
+        name_msg = await client.wait_for('message', check=check, timeout=30.0)
+        custom_name = name_msg.content
 
         # Create the character with the custom name
         create_character(user_id, custom_name)
+
+        # Debugging: Ensure the user is now in the database
+        if is_user_in_database(user_id):
+            print(f"User successfully added to the database: user_id={user_id}")
+        else:
+            print(f"Failed to add user to the database: user_id={user_id}")
+
         await ctx.send(f"Adventurer {custom_name} has joined the guild! You can now go out and slay monsters for the guild.")
 
-    except asyncio.TimeoutError: # Output for when the user takes longer than 30 seconds to say a name
+    except asyncio.TimeoutError:
         await ctx.send("You took too long to choose a name. Please try again.")
+
 
 @client.command() # Command to show the users profile
 async def profile(ctx):
-    user_id = str(ctx.author.id)
 
-    if user_id not in characters: # Checks if the user is in the json file
-        await ctx.send(f"Sorry adventurer, you are not enlisted in the guild. Please register with `.start`.") # If not tells them to create a character
-        return
+    user_id = str(ctx.author.id)
     
-    character = characters[user_id]
+    if not is_user_in_database(user_id):
+        await ctx.send("You are not enlisted in the guild traveler. Join the guild with `.start`.")
+        return
+
+    character = load_character(user_id)
 
     xp_bar_length= 15 # Sets the size of the xpbar
     xp_progress = character['Xp'] / character['XpToLevelUp'] # Sets how far the user is into leveling
@@ -375,14 +536,16 @@ async def profile(ctx):
     await ctx.send(profile_message)
 
 @client.command()
+
 async def fight(ctx, area: str):
+
     user_id = str(ctx.author.id)
 
-    if user_id not in characters:
-        await ctx.send(f"Sorry adventurer, you have to join the guild to hunt monsters (.start)")
+    if not is_user_in_database(user_id):
+        await ctx.send("You are not enlisted in the guild traveler. Join the guild with `.start`.")
         return
 
-    character = characters[user_id]
+    character = load_character(user_id)
     monster = Spawn_Monster(area)
 
     if not monster:
@@ -404,11 +567,8 @@ async def fight(ctx, area: str):
 @client.command()
 async def testlevelup(ctx):
     user_id = str(ctx.author.id)
-    if user_id not in characters:
-        await ctx.send("You need to join the guild first. Use `.start` to create your character.")
-        return
 
-    character = characters[user_id]
+    character = load_character(user_id)
     character['Xp'] = character['XpToLevelUp'] + 1  # Set XP to trigger level-up
     save_characters()
 
