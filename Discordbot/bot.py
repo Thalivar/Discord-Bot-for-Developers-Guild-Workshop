@@ -209,54 +209,15 @@ def take_damage(user_id, damage): # A define to be called later on when the user
         
         save_characters() # Saves the file to the json
 
-def Level_up(user_id): # If the user has enough xp (Checked with Check_Level_Up) Levels up the user and increases its stats
-
-    if user_id in characters:
-        character = characters[user_id]
-
-        print(f"Leveling up {user_id}... Current level: {character['Level']}, XP: {character['Xp']}")  # Debugging
-
-        character['Level'] += 1  # Increase level by 1
-        character['Attack'] += 2  # Increase attack by 2
-        character['MaxHealth'] += 20  # Increase max health by 20
-        character['Defense'] += 1  # Increase defense by 1
-        character["XpToLevelUp"] = int(character['XpToLevelUp'] * 1.2)  # Increase XP required for next level by 20%
-
-        character['Health'] = character['MaxHealth']  # Set health to max
-
-        print(f"New stats for {user_id}: Level {character['Level']}, Attack {character['Attack']}, Health {character['Health']}, XP to level up {character['XpToLevelUp']}")  # Debugging
-
-        save_characters()  # Save updated character data
-
-        return True  # Return True to indicate level-up successful
-
-    return False  # Return False if user not found
-
-def Check_Level_Up(user_id): # Checks if the user can levelup with its current xp
-    
-    if user_id in characters:
-        character = characters[user_id]
-        
-        print(f"Checking level-up for {user_id}. Current XP: {character['Xp']} / XP required: {character['XpToLevelUp']}")  # Debugging
-
-        # Check if the player has enough XP to level up
-        if character['Xp'] >= character['XpToLevelUp']:
-            print(f"{user_id} has enough XP to level up!")  # Debugging
-            character['Xp'] -= character['XpToLevelUp']  # Deduct XP required for level-up
-            return Level_up(user_id)  # Level up and return True if successful
-        else:
-            print(f"{user_id} does not have enough XP to level up.")  # Debugging
-    return False  # Return False if no level-up condition is met
-
 def get_monsters_for_area(area): # List of monsters and the areas they are in
 
     areas = {
         'Forest': [
-            {'Name': 'Bunny', 'Health': 1, 'Attack': 11, 'Defense': 1, 'XpReward': 10, 'Rarity': 'common'},
-            {'Name': 'Wolf', 'Health': 1, 'Attack': 11, 'Defense': 2, 'XpReward': 20, 'Rarity': 'common'},
-            {'Name': 'Boar', 'Health': 2, 'Attack': 15, 'Defense': 2, 'XpReward': 30, 'Rarity': 'uncommon'},
-            {'Name': 'Treant', 'Health': 2, 'Attack': 11, 'Defense': 1, 'XpReward': 35, 'Rarity': 'rare'},
-            {'Name': 'Wolf King', 'Health': 2, 'Attack': 20, 'Defense': 3, 'XpReward': 100, 'Rarity': 'legendary'}
+            {'Name': 'Bunny', 'Health': 20, 'Attack': 11, 'Defense': 1, 'XpReward': 10, 'Rarity': 'common'},
+            {'Name': 'Wolf', 'Health': 20, 'Attack': 11, 'Defense': 2, 'XpReward': 20, 'Rarity': 'common'},
+            {'Name': 'Boar', 'Health': 20, 'Attack': 15, 'Defense': 2, 'XpReward': 30, 'Rarity': 'uncommon'},
+            {'Name': 'Treant', 'Health': 20, 'Attack': 11, 'Defense': 1, 'XpReward': 35, 'Rarity': 'rare'},
+            {'Name': 'Wolf King', 'Health': 20, 'Attack': 20, 'Defense': 3, 'XpReward': 100, 'Rarity': 'legendary'}
         ],
         'Cave': [
             {'Name': 'Bat', 'Health': 80, 'Attack': 12, 'Defense': 5, 'XpReward': 50, 'Rarity': 'common'},
@@ -278,82 +239,83 @@ def get_monsters_for_area(area): # List of monsters and the areas they are in
     }
     return areas.get(area, None)
 
-def Spawn_Monster(area):  # Function to spawn a monster
-    monsters = get_monsters_for_area(area)
-    
-    # Debugging: Check what monsters are returned
-    if not monsters:
-        print(f"Error: No monsters found for area: {area}")
-        return None
-    
-    # Define the rarity weights
-    rarity_weights = {
-        'common': 1,
-        'uncommon': 2,
-        'rare': 5,
-        'epic': 8,
-        'legendary': 10
-    }
-
-    # Calculate the total weight of all the monsters in the area
-    total_weight = sum(rarity_weights[monster['Rarity']] for monster in monsters)
-    print(f"Total weight for area {area}: {total_weight}")  # Debugging
-
-    # Generate a random number between 1 and total_weight
-    random_choice = random.randint(1, total_weight)
-    print(f"Random choice: {random_choice}")  # Debugging
-
-    # Determine which monster is selected based on the random number and weights
-    weight_sum = 0
-    for monster in monsters:
-        weight_sum += rarity_weights[monster['Rarity']]  # Accumulate the weight sum
-        print(f"Checking monster {monster['Name']} with cumulative weight sum: {weight_sum}")  # Debugging
+def Check_Level_Up(user_id):  
+    # Ensure user exists
+    if user_id in characters:
+        character = characters[user_id]
         
-        if random_choice <= weight_sum:
-            print(f"Selected monster: {monster['Name']}")  # Debugging
-            return monster  # Return the monster that has been selected
+        # Debugging: Check XP and level-up threshold
+        print(f"Checking level-up for {character['Name']} - XP: {character['Xp']}, XPToLevelUp: {character['XpToLevelUp']}")
 
-    return None  # In case no monster is selected, but this shouldn't happen.
+        # Check if XP is sufficient for level-up
+        while character['Xp'] >= character['XpToLevelUp']:  # Allow multiple levels if XP is high enough
+            character['Xp'] -= character['XpToLevelUp']  # Deduct XP required for the level-up
+            Level_up(user_id)  # Perform the level-up
+
+            print(f"{character['Name']} leveled up! New Level: {character['Level']}, Remaining XP: {character['Xp']}")  # Debugging
+
+        save_characters()  # Save updated data to JSON
+        return True
+    return False
+
+
+def Level_up(user_id):
+    if user_id in characters:
+        character = characters[user_id]
+
+        # Debugging
+        print(f"Leveling up {character['Name']} - Current Level: {character['Level']}, XP: {character['Xp']}, XPToLevelUp: {character['XpToLevelUp']}")
+
+        character['Level'] += 1
+        character['Attack'] += 2
+        character['MaxHealth'] += 20
+        character['Defense'] += 1
+        character['XpToLevelUp'] = int(character['XpToLevelUp'] * 1.2)
+        character['Health'] = character['MaxHealth']
+
+        print(f"New stats: Level {character['Level']}, Attack {character['Attack']}, MaxHealth {character['MaxHealth']}, Defense {character['Defense']}, Next XPToLevelUp: {character['XpToLevelUp']}")
+
+        save_characters()
+        return True
+    return False
+
 
 async def battle(character, monster):
-    
-    print(f"Battle started between {character['Name']} and {monster['Name']}")  # Debugging
-
     while character['Health'] > 0 and monster['Health'] > 0:
-        # Character attacks first
-        damage_to_monster = max(character['Attack'] - monster['Defense'], 1)  # Ensure no zero damage
+        # Player attacks
+        damage_to_monster = max(character['Attack'] - monster['Defense'], 1)
         monster['Health'] -= damage_to_monster
-        print(f"{monster['Name']} takes {damage_to_monster} damage, remaining health: {monster['Health']}")
-
-        # Check if monster is dead
         if monster['Health'] <= 0:
-            monster['Health'] = 0  # Prevent monster health from going negative
-            # Award XP to the player after defeating the monster
             character['Xp'] += monster['XpReward']
-            print(f"{character['Name']} gained {monster['XpReward']} XP! Total XP: {character['Xp']}")
+            print(f"{character['Name']} gained {monster['XpReward']} XP! Total XP: {character['Xp']}")  # Debugging
 
-            # Save the character data with updated XP
-            save_characters()  # Ensure XP is saved to the file
+            save_characters()  # Ensure XP is saved before level-up check
+            if Check_Level_Up(str(character['Name'])):  # Trigger level-up
+                return f"{character['Name']} defeated {monster['Name']} and leveled up!"
+            return f"{character['Name']} defeated {monster['Name']}! XP: {character['Xp']}"
 
-            # Return the victory message, but don't check level up here
-            return f"{character['Name']} defeated {monster['Name']}! You receive {monster['XpReward']} XP."
+        # Monster retaliates
+        damage_to_player = max(monster['Attack'] - character['Defense'], 1)
+        character['Health'] = max(0, character['Health'] - damage_to_player)
+        if character['Health'] == 0:
+            save_characters()  # Save health update
+            return f"{character['Name']} was defeated by {monster['Name']}."
 
-        # Monster attacks back
-        damage_to_player = max(monster['Attack'] - character['Defense'], 1)  # Ensure no zero damage
-        print(f"Damage to {character['Name']} from {monster['Name']}: {damage_to_player}")
-        take_damage(character['Name'], damage_to_player)  # Apply damage to the player
-        print(f"{character['Name']} has {character['Health']} health remaining after taking damage")
 
-        # Check if player is dead
-        if character['Health'] <= 0:
-            character['Health'] = 0  # Prevent character health from going negative
-            return f"{character['Name']} was defeated by {monster['Name']}... You lose the battle."
-
-        # Optionally, you can add a small delay between rounds for visual effect
-        await asyncio.sleep(1)
-
-    return "Battle ended unexpectedly."
-            
+def Spawn_Monster(area): 
+    # Balanced monster generation with corrected weighting
+    monsters = get_monsters_for_area(area)
+    if not monsters:
+        return None
+    rarity_weights = {'common': 10, 'uncommon': 6, 'rare': 3, 'epic': 1, 'legendary': 0.5}
+    total_weight = sum(rarity_weights[m['Rarity']] for m in monsters)
+    random_choice = random.uniform(0, total_weight)
+    cumulative_weight = 0
+    for monster in monsters:
+        cumulative_weight += rarity_weights[monster['Rarity']]
+        if random_choice <= cumulative_weight:
+            return monster
+    return None           
 
 @client.command() # Command to start the game and create your character.
 async def start(ctx):
@@ -435,32 +397,26 @@ async def fight(ctx, area: str):
     result = await battle(character, monster)
     await ctx.send(result)
 
-    if Check_Level_Up(character['Name']):
+    if Check_Level_Up(user_id):
         await ctx.send(f"Congratulations {character['Name']}! You have leveled up!")
         save_characters()
 
 @client.command()
 async def testlevelup(ctx):
-    
     user_id = str(ctx.author.id)
-
-    print(f"Test level-up command triggered for user {user_id}")  # Debugging: Confirm command is triggered
-
     if user_id not in characters:
         await ctx.send("You need to join the guild first. Use `.start` to create your character.")
         return
 
     character = characters[user_id]
+    character['Xp'] = character['XpToLevelUp'] + 1  # Set XP to trigger level-up
+    save_characters()
 
-    # Manually increase XP to trigger level-up
-    character['Xp'] = character['XpToLevelUp'] + 1  # Ensure XP exceeds XPToLevelUp
-
-    print(f"Manual XP set for {user_id}: {character['Xp']}")  # Debugging
-
-    if Check_Level_Up(character['Name']):
-        await ctx.send(f"Level-up successful! New stats: Level {character['Level']}, Attack {character['Attack']}, Health {character['Health']}")
+    if Check_Level_Up(user_id):
+        await ctx.send(f"Level-up successful! {character['Name']} is now Level {character['Level']}. XP: {character['Xp']}, Next Level XP: {character['XpToLevelUp']}")
     else:
         await ctx.send("Level-up failed.")
+
 
 # Fight system:
 # Make about 3 areas each different in difficulty
@@ -473,4 +429,5 @@ async def testlevelup(ctx):
 # Make loot drops like items that the user can use
 # Maybe something like a dungeon later on with a endgame boss
 # 
+
 client.run(TOKEN)
