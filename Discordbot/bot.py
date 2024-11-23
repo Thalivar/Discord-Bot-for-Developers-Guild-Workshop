@@ -156,6 +156,7 @@ async def rps(ctx, choice: str):
 # Get images for the loot drops and items
 # Get things like healing potions/ "Buff" potions to increase attack/ defense and health above the normal limit
 # Maybe try to add something like magic
+# Try to add a pet system/ classes for hunter pets
 
 # Initialize the database
 def initialize_database():
@@ -325,28 +326,28 @@ def get_monsters_for_area(area): # List of monsters and the areas they are in
 
     areas = {
         'Forest': [
-            {'Name': 'Bunny', 'Health': 20, 'Attack': 11, 'Defense': 1, 'XpReward': 10, 'Rarity': 'common', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Rabbit Fur': {'chance': 10, 'quantity': 1}}},
-            {'Name': 'Wolf', 'Health': 20, 'Attack': 11, 'Defense': 2, 'XpReward': 20, 'Rarity': 'common', 'LootTable': {'Wolf Pelt': {'chance': 90, 'quantity': (1, 3)}, 'Bone': {'chance': 10, 'quantity': 1}}},
-            {'Name': 'Boar', 'Health': 20, 'Attack': 15, 'Defense': 2, 'XpReward': 30, 'Rarity': 'uncommon', 'LootTable': {'Boar Pelt': {'chance': 90, 'quantity': (1, 3)}, 'Tusk': {'chance': 10, 'quantity': 1}}},
-            {'Name': 'Treant', 'Health': 20, 'Attack': 11, 'Defense': 1, 'XpReward': 35, 'Rarity': 'rare', 'LootTable': {'Treant bark': {'chance': 90, 'quantity': (1, 3)}, 'Treant Sap': {'chance': 10, 'quantity': 1}, 'Treant Heart': {'chance': 1, 'quantity': 1}}},
-            {'Name': 'Wolf King', 'Health': 20, 'Attack': 20, 'Defense': 3, 'XpReward': 100, 'Rarity': 'legendary', 'LootTable': {'Wolf King Pelt': {'chance': 90, 'quantity': (1, 3)}, 'Wolf King bone': {'chance': 10, 'quantity': 1}, 'Wolf Kings Essence': {'chance': 1, 'quantity': 1}}}
+            {'Name': 'Bunny', 'Health': 20, 'Attack': 11, 'Defense': 1, 'XpReward': 10, 'Rarity': 'common', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 5), 'guaranteed': True}, 'Rabbit Fur': {'chance': 10, 'quantity': 1, 'guaranteed': False}}},
+            {'Name': 'Wolf', 'Health': 20, 'Attack': 11, 'Defense': 2, 'XpReward': 20, 'Rarity': 'common', 'LootTable': {'Wolf Pelt': {'chance': 80, 'quantity': (1, 2), 'guaranteed': True}, 'Wolf Bone': {'chance': 20, 'quantity': 1, 'guaranteed': False}}},
+            {'Name': 'Boar', 'Health': 20, 'Attack': 15, 'Defense': 2, 'XpReward': 30, 'Rarity': 'uncommon', 'LootTable': {'Boar Pelt': {'chance': 70, 'quantity': (1, 3), 'guaranteed': True}, 'Tusk': {'chance': 30, 'quantity': 1, 'guaranteed': False}}},
+            {'Name': 'Treant', 'Health': 20, 'Attack': 11, 'Defense': 1, 'XpReward': 35, 'Rarity': 'rare', 'LootTable': {'Treant bark': {'chance': 70, 'quantity': (1, 5), 'guaranteed': True}, 'Treant Sap': {'chance': 29, 'quantity': (1, 3), 'guaranteed': False}, 'Treant Heart': {'chance': 1, 'quantity': 1, 'guaranteed': False}}},
+            {'Name': 'Wolf King', 'Health': 20, 'Attack': 20, 'Defense': 3, 'XpReward': 100, 'Rarity': 'legendary', 'LootTable': {'Wolf King Pelt': {'chance': 80, 'quantity': (1, 4), 'guaranteed': True}, 'Wolf King bone': {'chance': 19, 'quantity': 1, 'guaranteed': False}, 'Wolf Kings Essence': {'chance': 1, 'quantity': 1, 'guaranteed': False}}}
         ],
         'Cave': [
-            {'Name': 'Bat', 'Health': 80, 'Attack': 12, 'Defense': 5, 'XpReward': 50, 'Rarity': 'common', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
-            {'Name': 'Giant Spider', 'Health': 100, 'Attack': 15, 'Defense': 7, 'XpReward': 60, 'Rarity': 'uncommon', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
-            {'Name': 'Troll', 'Health': 200, 'Attack': 25, 'Defense': 12, 'XpReward': 75, 'Rarity': 'rare', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
-            {'Name': 'Basilisk', 'Health': 100, 'Attack': 20, 'Defense': 20, 'XpReward': 175, 'Rarity': 'epic', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
-            {'Name': 'Mimic', 'Health': 150, 'Attack': 60, 'Defense': 34, 'XpReward': 300, 'Rarity': 'legendary', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
-            {'Name': 'Orc', 'Health': 300, 'Attack': 30, 'Defense': 50, 'XpReward': 500, 'Rarity': 'legendary', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}}
+            {'Name': 'Bat', 'Health': 80, 'Attack': 12, 'Defense': 5, 'XpReward': 50, 'Rarity': 'common', 'LootTable': {'Bat Wing': {'chance': 70, 'quantity': (1, 2), 'guaranteed': True}, 'Bat ear': {'chance': 30, 'quantity': (1, 2), 'guaranteed': False}}},
+            {'Name': 'Giant Spider', 'Health': 100, 'Attack': 15, 'Defense': 7, 'XpReward': 60, 'Rarity': 'uncommon', 'LootTable': {'Spider Legs': {'chance': 80, 'quantity': (1, 8), 'guaranteed': True}, 'Spider Eyes': {'chance': 20, 'quantity': (1, 10), 'guaranteed': False}}},
+            {'Name': 'Goblin', 'Health': 200, 'Attack': 25, 'Defense': 12, 'XpReward': 75, 'Rarity': 'rare', 'LootTable': {'Goblin Teeth': {'chance': 69, 'quantity': (1, 8), 'guaranteed': True}, 'Goblin Hide': {'chance': 30, 'quantity': (1, 3), 'guaranteed': False}, 'Goblin Hammer': {'chance': 1, 'quantity': 1, 'guaranteed': False}}},
+            {'Name': 'Basilisk', 'Health': 100, 'Attack': 20, 'Defense': 20, 'XpReward': 175, 'Rarity': 'epic', 'LootTable': {'Basilisk Skin': {'chance': 79, 'quantity': (1, 4), 'guaranteed': True}, 'Basalisk Teeth': {'chance': 20, 'quantity': (1, 10), 'guaranteed': False}, 'Basalisk Scale': {'chance': 1, 'quantity': (1, 5), 'guaranteed': False}}},
+            {'Name': 'Mimic', 'Health': 150, 'Attack': 60, 'Defense': 34, 'XpReward': 300, 'Rarity': 'legendary', 'LootTable': {'Gold Coins': {'chance': 79, 'quantity': (1, 15), 'guaranteed': True}, 'Mixed Gems': {'chance': 20, 'quantity': (1, 4), 'guaranteed': False}, 'Diamond': {'chance': 1, 'quantity': (1, 3), 'guaranteed': False}}},
+            {'Name': 'Gostir The Three Headed Dragon', 'Health': 300, 'Attack': 30, 'Defense': 50, 'XpReward': 500, 'Rarity': 'legendary', 'LootTable': {'Gold Coins': {'chance': 69, 'quantity': (1, 25), 'guaranteed': True}, 'Dragon Scale': {'chance': 30, 'quantity': (1, 8), 'guaranteed': False}, 'The Dragon Slayer': {'chance': 1, 'quantity': 1, 'guaranteed': False}}}
         ],
         'Desert': [
-            {'Name': 'Giant Scorpions', 'Health': 150, 'Attack': 40, 'Defense': 10, 'XpReward': 250, 'Rarity': 'common', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
-            {'Name': 'Mummy', 'Health': 250, 'Attack': 30, 'Defense': 15, 'XpReward': 400, 'Rarity': 'uncommon', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
-            {'Name': 'Giant Lizards', 'Health': 200, 'Attack': 50, 'Defense': 15, 'XpReward': 420, 'Rarity': 'uncommon', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
-            {'Name': 'Group of Bandits', 'Health': 250, 'Attack': 60, 'Defense': 25, 'XpReward': 500, 'Rarity': 'rare', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
-            {'Name': 'Air Elemental', 'Health': 300, 'Attack': 100, 'Defense': 50, 'XpReward': 600, 'Rarity': 'epic', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
-            {'Name': 'Jinn', 'Health': 250, 'Attack': 150, 'Defense': 75, 'XpReward': 750, 'Rarity': 'legendary', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
-            {'Name': 'Brass Dragon', 'Health': 750, 'Attack': 110, 'Defense': 100, 'XpReward': 1500, 'Rarity': 'legendary', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}}
+            {'Name': 'Giant Scorpions', 'Health': 150, 'Attack': 40, 'Defense': 10, 'XpReward': 250, 'Rarity': 'common', 'LootTable': {'Stinger': {'chance': 90, 'quantity': (1, 3), 'guaranteed': True}, 'Claw': {'chance': 10, 'quantity': 1, 'guaranteed': False}, 'Venow Gland': {'chance': 1, 'quantity': (1, 2), 'guaranteed': False}}},
+            {'Name': 'Mummy', 'Health': 250, 'Attack': 30, 'Defense': 15, 'XpReward': 400, 'Rarity': 'uncommon', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3), 'guaranteed': True}, 'Fur': {'chance': 10, 'quantity': 1, 'guaranteed': False}}},
+            {'Name': 'Giant Lizards', 'Health': 200, 'Attack': 50, 'Defense': 15, 'XpReward': 420, 'Rarity': 'uncommon', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3), 'guaranteed': True}, 'Fur': {'chance': 10, 'quantity': 1, 'guaranteed': False}}},
+            {'Name': 'Group of Bandits', 'Health': 250, 'Attack': 60, 'Defense': 25, 'XpReward': 500, 'Rarity': 'rare', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3), 'guaranteed': True}, 'Fur': {'chance': 10, 'quantity': 1, 'guaranteed': False}}},
+            {'Name': 'Air Elemental', 'Health': 300, 'Attack': 100, 'Defense': 50, 'XpReward': 600, 'Rarity': 'epic', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3), 'guaranteed': True}, 'Fur': {'chance': 10, 'quantity': 1, 'guaranteed': False}}},
+            {'Name': 'Jinn', 'Health': 250, 'Attack': 150, 'Defense': 75, 'XpReward': 750, 'Rarity': 'legendary', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3), 'guaranteed': True}, 'Fur': {'chance': 10, 'quantity': 1, 'guaranteed': False}}},
+            {'Name': 'Brass Dragon', 'Health': 750, 'Attack': 110, 'Defense': 100, 'XpReward': 1500, 'Rarity': 'legendary', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3), 'guaranteed': True}, 'Fur': {'chance': 10, 'quantity': 1, 'guaranteed': False}}}
         ]
     }
     return areas.get(area, None)
