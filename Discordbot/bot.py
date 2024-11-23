@@ -159,6 +159,7 @@ async def rps(ctx, choice: str):
 
 # Initialize the database
 def initialize_database():
+
     conn = sqlite3.connect('rpg_game.db')
     cursor = conn.cursor()
 
@@ -215,6 +216,7 @@ def is_user_in_database(user_id):
     return user_exists
 
 def load_character(user_id):
+
     conn = sqlite3.connect('rpg_game.db')
     cursor = conn.cursor()
 
@@ -223,6 +225,7 @@ def load_character(user_id):
     character_row = cursor.fetchone()
 
     if not character_row:
+
         conn.close()
         return None
 
@@ -255,8 +258,8 @@ def reset_character(user_id):
         cursor.execute("DELETE FROM characters WHERE user_id = ?", (user_id,))
         conn.commit()
 
-
 def save_characters(user_id, character):
+
     conn = sqlite3.connect('rpg_game.db')
     cursor = conn.cursor()
 
@@ -278,14 +281,16 @@ def save_characters(user_id, character):
 
     # Update inventory
     cursor.execute('DELETE FROM inventory WHERE user_id = ?', (user_id,))
+
     for item in character['Inventory']:
+
         cursor.execute('INSERT INTO inventory (user_id, item) VALUES (?, ?)', (user_id, item))
 
     conn.commit()
     conn.close()
 
-
 def create_character(user_id, custom_name):
+
     character = {
         'Name': custom_name,
         'Level': 1,
@@ -304,13 +309,12 @@ def create_character(user_id, custom_name):
     # Debugging
     print(f"Character created for user_id={user_id}: {character}")
 
-
-
 def take_damage(user_id, damage): # A define to be called later on when the users sends his character to fight something
     
     character = load_character(user_id)
         
-    new_health = character['Health'] - damage # Sets the newHealth to the character current health - the damage it took        
+    new_health = character['Health'] - damage # Sets the newHealth to the character current health - the damage it took  
+
     if new_health < 0: # Incase health goes under 0 sets it back to 0          new_health = 0
         
         character['Health'] = new_health # Attaches the new health back to the character
@@ -321,36 +325,38 @@ def get_monsters_for_area(area): # List of monsters and the areas they are in
 
     areas = {
         'Forest': [
-            {'Name': 'Bunny', 'Health': 20, 'Attack': 11, 'Defense': 1, 'XpReward': 10, 'Rarity': 'common'},
-            {'Name': 'Wolf', 'Health': 20, 'Attack': 11, 'Defense': 2, 'XpReward': 20, 'Rarity': 'common'},
-            {'Name': 'Boar', 'Health': 20, 'Attack': 15, 'Defense': 2, 'XpReward': 30, 'Rarity': 'uncommon'},
-            {'Name': 'Treant', 'Health': 20, 'Attack': 11, 'Defense': 1, 'XpReward': 35, 'Rarity': 'rare'},
-            {'Name': 'Wolf King', 'Health': 20, 'Attack': 20, 'Defense': 3, 'XpReward': 100, 'Rarity': 'legendary'}
+            {'Name': 'Bunny', 'Health': 20, 'Attack': 11, 'Defense': 1, 'XpReward': 10, 'Rarity': 'common', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Rabbit Fur': {'chance': 10, 'quantity': 1}}},
+            {'Name': 'Wolf', 'Health': 20, 'Attack': 11, 'Defense': 2, 'XpReward': 20, 'Rarity': 'common', 'LootTable': {'Wolf Pelt': {'chance': 90, 'quantity': (1, 3)}, 'Bone': {'chance': 10, 'quantity': 1}}},
+            {'Name': 'Boar', 'Health': 20, 'Attack': 15, 'Defense': 2, 'XpReward': 30, 'Rarity': 'uncommon', 'LootTable': {'Boar Pelt': {'chance': 90, 'quantity': (1, 3)}, 'Tusk': {'chance': 10, 'quantity': 1}}},
+            {'Name': 'Treant', 'Health': 20, 'Attack': 11, 'Defense': 1, 'XpReward': 35, 'Rarity': 'rare', 'LootTable': {'Treant bark': {'chance': 90, 'quantity': (1, 3)}, 'Treant Sap': {'chance': 10, 'quantity': 1}, 'Treant Heart': {'chance': 1, 'quantity': 1}}},
+            {'Name': 'Wolf King', 'Health': 20, 'Attack': 20, 'Defense': 3, 'XpReward': 100, 'Rarity': 'legendary', 'LootTable': {'Wolf King Pelt': {'chance': 90, 'quantity': (1, 3)}, 'Wolf King bone': {'chance': 10, 'quantity': 1}, 'Wolf Kings Essence': {'chance': 1, 'quantity': 1}}}
         ],
         'Cave': [
-            {'Name': 'Bat', 'Health': 80, 'Attack': 12, 'Defense': 5, 'XpReward': 50, 'Rarity': 'common'},
-            {'Name': 'Giant Spider', 'Health': 100, 'Attack': 15, 'Defense': 7, 'XpReward': 60, 'Rarity': 'uncommon'},
-            {'Name': 'Troll', 'Health': 200, 'Attack': 25, 'Defense': 12, 'XpReward': 75, 'Rarity': 'rare'},
-            {'Name': 'Basilisk', 'Health': 100, 'Attack': 20, 'Defense': 20, 'XpReward': 175, 'Rarity': 'epic'},
-            {'Name': 'Mimic', 'Health': 150, 'Attack': 60, 'Defense': 34, 'XpReward': 300, 'Rarity': 'legendary'},
-            {'Name': 'Orc', 'Health': 300, 'Attack': 30, 'Defense': 50, 'XpReward': 500, 'Rarity': 'legendary'}
+            {'Name': 'Bat', 'Health': 80, 'Attack': 12, 'Defense': 5, 'XpReward': 50, 'Rarity': 'common', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
+            {'Name': 'Giant Spider', 'Health': 100, 'Attack': 15, 'Defense': 7, 'XpReward': 60, 'Rarity': 'uncommon', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
+            {'Name': 'Troll', 'Health': 200, 'Attack': 25, 'Defense': 12, 'XpReward': 75, 'Rarity': 'rare', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
+            {'Name': 'Basilisk', 'Health': 100, 'Attack': 20, 'Defense': 20, 'XpReward': 175, 'Rarity': 'epic', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
+            {'Name': 'Mimic', 'Health': 150, 'Attack': 60, 'Defense': 34, 'XpReward': 300, 'Rarity': 'legendary', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
+            {'Name': 'Orc', 'Health': 300, 'Attack': 30, 'Defense': 50, 'XpReward': 500, 'Rarity': 'legendary', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}}
         ],
-        'Dessert': [
-            {'Name': 'Giant Scorpions', 'Health': 150, 'Attack': 40, 'Defense': 10, 'XpReward': 250, 'Rarity': 'common'},
-            {'Name': 'Mummy', 'Health': 250, 'Attack': 30, 'Defense': 15, 'XpReward': 400, 'Rarity': 'uncommon'},
-            {'Name': 'Giant Lizards', 'Health': 200, 'Attack': 50, 'Defense': 15, 'XpReward': 420, 'Rarity': 'uncommon'},
-            {'Name': 'Group of Bandits', 'Health': 250, 'Attack': 60, 'Defense': 25, 'XpReward': 500, 'Rarity': 'rare'},
-            {'Name': 'Air Elemental', 'Health': 300, 'Attack': 100, 'Defense': 50, 'XpReward': 600, 'Rarity': 'epic'},
-            {'Name': 'Jinn', 'Health': 250, 'Attack': 150, 'Defense': 75, 'XpReward': 750, 'Rarity': 'legendary'},
-            {'Name': 'Brass Dragon', 'Health': 750, 'Attack': 110, 'Defense': 100, 'XpReward': 1500, 'Rarity': 'legendary'}
+        'Desert': [
+            {'Name': 'Giant Scorpions', 'Health': 150, 'Attack': 40, 'Defense': 10, 'XpReward': 250, 'Rarity': 'common', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
+            {'Name': 'Mummy', 'Health': 250, 'Attack': 30, 'Defense': 15, 'XpReward': 400, 'Rarity': 'uncommon', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
+            {'Name': 'Giant Lizards', 'Health': 200, 'Attack': 50, 'Defense': 15, 'XpReward': 420, 'Rarity': 'uncommon', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
+            {'Name': 'Group of Bandits', 'Health': 250, 'Attack': 60, 'Defense': 25, 'XpReward': 500, 'Rarity': 'rare', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
+            {'Name': 'Air Elemental', 'Health': 300, 'Attack': 100, 'Defense': 50, 'XpReward': 600, 'Rarity': 'epic', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
+            {'Name': 'Jinn', 'Health': 250, 'Attack': 150, 'Defense': 75, 'XpReward': 750, 'Rarity': 'legendary', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}},
+            {'Name': 'Brass Dragon', 'Health': 750, 'Attack': 110, 'Defense': 100, 'XpReward': 1500, 'Rarity': 'legendary', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 3)}, 'Fur': {'chance': 10, 'quantity': 1}}}
         ]
     }
     return areas.get(area, None)
 
 def Level_up(user_id):
+
     character = load_character(user_id)
 
     if not character:
+
         return False
 
     # Apply level-up changes
@@ -369,9 +375,11 @@ def Level_up(user_id):
     return True
 
 def Check_Level_Up(user_id):
+
     character = load_character(user_id)
 
     if not character:
+
         return False
 
     leveled_up = False
@@ -393,6 +401,7 @@ async def battle(ctx, user_id, area):
     monster = Spawn_Monster(area)
 
     if not monster:
+
         return "No monsters found in this area!"
 
     await ctx.send(f"A wild {monster['Name']} has appeared! Prepare for battle.")
@@ -403,13 +412,17 @@ async def battle(ctx, user_id, area):
         monster['Health'] -= damage_to_monster
 
         if monster['Health'] <= 0:
+
             character['Xp'] += monster['XpReward']
             save_characters(user_id, character)  # Save XP update
 
             # Check for level-up
             if Check_Level_Up(user_id):
+
                 return f"{character['Name']} defeated {monster['Name']} and leveled up!"
+            
             else:
+
                 return f"{character['Name']} defeated {monster['Name']}! XP: {character['Xp']}/{character['XpToLevelUp']}"
 
         # Monster retaliates
@@ -417,6 +430,7 @@ async def battle(ctx, user_id, area):
         character['Health'] = max(0, character['Health'] - damage_to_player)
 
         if character['Health'] == 0:
+
             save_characters(user_id, character)
             return f"{character['Name']} was defeated by {monster['Name']}."
 
@@ -428,15 +442,20 @@ def Spawn_Monster(area):
     monsters = get_monsters_for_area(area)
 
     if not monsters:
+
         return None
+    
     rarity_weights = {'common': 10, 'uncommon': 6, 'rare': 3, 'epic': 1, 'legendary': 0.5}
     total_weight = sum(rarity_weights[m['Rarity']] for m in monsters)
     random_choice = random.uniform(0, total_weight)
     cumulative_weight = 0
 
     for monster in monsters:
+
         cumulative_weight += rarity_weights[monster['Rarity']]
+
         if random_choice <= cumulative_weight:
+
             return monster
         
     return None           
@@ -447,12 +466,14 @@ async def start(ctx):
 
     # Check if the user already exists in the database
     if is_user_in_database(user_id):
+
         await ctx.send(f"You are already in the guild, adventurer.")
         return
 
     await ctx.send(f"Welcome adventurer! Please write down your preferred name in the guild list:")
 
     def check(msg):
+
         return msg.author == ctx.author and len(msg.content) > 0
 
     try:
@@ -465,13 +486,17 @@ async def start(ctx):
 
         # Debugging: Ensure the user is now in the database
         if is_user_in_database(user_id):
+
             print(f"User successfully added to the database: user_id={user_id}")
+
         else:
+
             print(f"Failed to add user to the database: user_id={user_id}")
 
         await ctx.send(f"Adventurer {custom_name} has joined the guild! You can now go out and slay monsters for the guild.")
 
     except asyncio.TimeoutError:
+
         await ctx.send("You took too long to choose a name. Please try again.")
 
 
@@ -482,6 +507,7 @@ async def profile(ctx):
     user_id = str(ctx.author.id)
     
     if not is_user_in_database(user_id):
+
         await ctx.send("You are not enlisted in the guild traveler. Join the guild with `.start`.")
         return
 
@@ -511,6 +537,7 @@ async def fight(ctx, area: str):
     user_id = str(ctx.author.id)
 
     if not is_user_in_database(user_id):
+
         await ctx.send("You are not enlisted in the guild traveler. Join the guild with `.start`.")
         return
 
@@ -518,6 +545,7 @@ async def fight(ctx, area: str):
     monster = Spawn_Monster(area)
 
     if not monster:
+
         await ctx.send("Somebody already took all the bounty's for this area. Please try another one.")
         return
 
@@ -527,6 +555,7 @@ async def fight(ctx, area: str):
     await ctx.send(result)
 
     if Check_Level_Up(user_id):
+
         await ctx.send(f"Congratulations {character['Name']}! You have leveled up!")
 
 
