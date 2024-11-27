@@ -396,47 +396,116 @@ def Check_Level_Up(user_id):
     save_characters(user_id, character)
     return leveled_up
 
+def Generate_Loot(loot_table):
+
+    loot_dropped = []
+
+    for item, details in loot_table.items():
+
+        if details.get('guaranteed', False):
+
+            quantity = details['quantity']
+
+            if isinstance(quantity, tuple):
+
+                quantity = random.randint(quantity[0], quantity[1])
+
+            loot_dropped.append((item, quantity))
+
+        else:
+
+            drop_chance = details['chance'] * 100  # Adjust if chance is a fraction (e.g., 0.5 = 50%)
+
+            if random.randint(1, 10000) <= drop_chance:  # 1-10000 for 0.01% precision
+
+                loot_quantity = details['quantity']
+
+                quantity = random.randint(loot_quantity[0], loot_quantity[1]) if isinstance(loot_quantity, tuple) else loot_quantity
+
+                loot_dropped.append((item, quantity))
+
+    return loot_dropped
+
+
+def add_to_inventory(inventory, item_name, quantity):
+
+    if not inventory:  # Initialize inventory if empty
+        
+        inventory = {}
+
+    if item_name in inventory:
+
+        inventory[item_name] += quantity
+
+    else:
+
+        inventory[item_name] = quantity
 
 async def battle(ctx, user_id, area):
+    user_id = str(ctx.author.id)
     character = load_character(user_id)
+
+    if not character:
+        await ctx.send("You need to join the guild first! Use `.start` to create your character.")
+        return
+
+    # Spawn a monster for the area
     monster = Spawn_Monster(area)
-
     if not monster:
+        await ctx.send(f"No monsters found in the {area}. Try exploring somewhere else!")
+        return
 
-        return "No monsters found in this area!"
-
-    await ctx.send(f"A wild {monster['Name']} has appeared! Prepare for battle.")
+    await ctx.send(f"A wild **{monster['Name']}** appears! Prepare for battle!")
 
     while character['Health'] > 0 and monster['Health'] > 0:
-        # Player attacks
+        # Player attacks monster
         damage_to_monster = max(character['Attack'] - monster['Defense'], 1)
         monster['Health'] -= damage_to_monster
 
         if monster['Health'] <= 0:
-
+            # Monster defeated
+            await ctx.send(f"**{character['Name']}** has defeated the **{monster['Name']}**!")
             character['Xp'] += monster['XpReward']
-            save_characters(user_id, character)  # Save XP update
 
             # Check for level-up
-            if Check_Level_Up(user_id):
+            leveled_up = Check_Level_Up(user_id)
+            if leveled_up:
+                await ctx.send(f" {character['Name']} leveled up to **Level {character['Level']}**!")
 
-                return f"{character['Name']} defeated {monster['Name']} and leveled up!"
-            
+            # Generate loot
+            if 'LootTable' in monster and monster['LootTable']:
+                loot = Generate_Loot(monster['LootTable'])
+                if loot:
+                    loot_message = f"Loot obtained from {monster['Name']}:\n"
+                    for item, quantity in loot:
+                        add_to_inventory(character['Inventory'], item, quantity)
+                        loot_message += f"- **{item}** x{quantity}\n"
+                    await ctx.send(loot_message)
+                else:
+                    await ctx.send("No loot obtained from this battle.")
             else:
+                await ctx.send(f"{monster['Name']} had no loot.")
+            
+            # Save updated character to the database
+            save_characters(user_id, character)
+            return
 
-                return f"{character['Name']} defeated {monster['Name']}! XP: {character['Xp']}/{character['XpToLevelUp']}"
-
-        # Monster retaliates
+        # Monster attacks player
         damage_to_player = max(monster['Attack'] - character['Defense'], 1)
         character['Health'] = max(0, character['Health'] - damage_to_player)
+        await ctx.send(
+            f"**{monster['Name']}** attacks **{character['Name']}** for {damage_to_player} damage! "
+            f"Remaining Health: {character['Health']}/{character['MaxHealth']}"
+        )
 
         if character['Health'] == 0:
-
+            await ctx.send(f"**{character['Name']}** was defeated by the **{monster['Name']}**. Rest at the guild to recover.")
             save_characters(user_id, character)
-            return f"{character['Name']} was defeated by {monster['Name']}."
+            return
 
     # Fallback message (should not reach here)
     return "Battle ended unexpectedly."
+
 
 def Spawn_Monster(area): 
     # Balanced monster generation with corrected weighting
@@ -521,6 +590,13 @@ async def profile(ctx):
 
     xp_bar = f"[{'#' * xp_filled}{' ' * xp_empty}] {character['Xp']} / {character['XpToLevelUp']}"
 
+    if character.get('inventory'):
+        
+        inventory_items = ', ' .join(character['inventory']) if character['inventory'] else "Empty"
+    
+    else:
+        inventory_items = "Empty"
+
     profile_message = (
         f"**Profile of {character['Name']}**\n"
         f"**Level:** {character['Level']}\n"
@@ -528,7 +604,7 @@ async def profile(ctx):
         f"**Health:** {character['Health']}/{character['MaxHealth']}\n"
         f"**Defense:** {character['Defense']}\n"
         f"**Attack:** {character['Attack']}\n"
-        f"**Inventory:** {', '.join(character['Inventory']) if character['Inventory'] else 'Is empty'}"
+        f"**Inventory:** {inventory_items}"
     )
 
     await ctx.send(profile_message)
