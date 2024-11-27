@@ -197,15 +197,18 @@ initialize_database()
 
 @client.command() # Help message for the commands for the rpg game.
 async def rpghelp(ctx):
+
     rpghelp_message = """
     Here are the commands to play the rpg game:
     ".start" - To create you character and register into the guild
     ".profile" - To check your profile
     ".fight" - To fight monsters for the guild"""
+
     await ctx.send(rpghelp_message)
 
 def is_user_in_database(user_id):
 
+    # Connects with the database (rpg_game.db)
     conn = sqlite3.connect('rpg_game.db')
     cursor = conn.cursor()
 
@@ -217,81 +220,104 @@ def is_user_in_database(user_id):
     return user_exists
 
 def load_character(user_id):
+    try:
+        with sqlite3.connect('rpg_game.db') as conn:
+            cursor = conn.cursor()
 
-    conn = sqlite3.connect('rpg_game.db')
-    cursor = conn.cursor()
+            # Fetch character data
+            cursor.execute('SELECT * FROM characters WHERE user_id = ?', (user_id,))
+            character_row = cursor.fetchone()
 
-    # Fetch character data
-    cursor.execute('SELECT * FROM characters WHERE user_id = ?', (user_id,))
-    character_row = cursor.fetchone()
+            if not character_row:
+                return None
 
-    if not character_row:
+            # Convert character to dictionary
+            character = {
+                'Name': character_row[1],
+                'Level': character_row[2],
+                'Xp': character_row[3],
+                'Health': character_row[4],
+                'MaxHealth': character_row[5],
+                'Defense': character_row[6],
+                'Attack': character_row[7],
+                'XpToLevelUp': character_row[8],
+                'Inventory': {}
+            }
 
-        conn.close()
+            # Fetch inventory items
+            cursor.execute('SELECT item, COUNT(item) FROM inventory WHERE user_id = ? GROUP BY item', (user_id,))
+            items = cursor.fetchall()
+
+            character['Inventory'] = {item: count for item, count in items}
+
+            return character
+    except sqlite3.Error as e:
+        print(f"Database error in load_character: {e}")
+        return None
+    except Exception as e:
+        print(f"Unexpected error in load_character: {e}")
         return None
 
-    # Convert row into a dictionary
-    character = {
-        'Name': character_row[1],
-        'Level': character_row[2],
-        'Xp': character_row[3],
-        'Health': character_row[4],
-        'MaxHealth': character_row[5],
-        'Defense': character_row[6],
-        'Attack': character_row[7],
-        'XpToLevelUp': character_row[8],
-        'Inventory': []
-    }
-
-    # Fetch inventory items
-    cursor.execute('SELECT item FROM inventory WHERE user_id = ?', (user_id,))
-    items = cursor.fetchall()
-    character['Inventory'] = [item[0] for item in items]
-
-    conn.close()
-    return character
 
 def reset_character(user_id):
+    try:
+        with sqlite3.connect("rpg_game.db") as conn:
+            cursor = conn.cursor()
 
-    with sqlite3.connect("rpg_game.db") as conn:
+            # Delete character data
+            cursor.execute("DELETE FROM characters WHERE user_id = ?", (user_id,))
+            # Delete inventory data
+            cursor.execute("DELETE FROM inventory WHERE user_id = ?", (user_id,))
 
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM characters WHERE user_id = ?", (user_id,))
-        conn.commit()
+            conn.commit()
+    except sqlite3.Error as e:
+        print(f"Database error in reset_character: {e}")
+    except Exception as e:
+        print(f"Unexpected error in reset_character: {e}")
+
 
 def save_characters(user_id, character):
+    try:
+        with sqlite3.connect('rpg_game.db') as conn:
+            cursor = conn.cursor()
 
-    conn = sqlite3.connect('rpg_game.db')
-    cursor = conn.cursor()
+            # Save character stats
+            cursor.execute('''
+            INSERT OR REPLACE INTO characters (user_id, name, level, xp, health, max_health, defense, attack, xp_to_level_up)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                user_id,
+                character['Name'],
+                character['Level'],
+                character['Xp'],
+                character['Health'],
+                character['MaxHealth'],
+                character['Defense'],
+                character['Attack'],
+                character['XpToLevelUp']
+            ))
 
-    # Update character data
-    cursor.execute('''
-    INSERT OR REPLACE INTO characters (user_id, name, level, xp, health, max_health, defense, attack, xp_to_level_up)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (
-        user_id,
-        character['Name'],
-        character['Level'],
-        character['Xp'],
-        character['Health'],
-        character['MaxHealth'],
-        character['Defense'],
-        character['Attack'],
-        character['XpToLevelUp']
-    ))
+            # Update inventory
+            cursor.execute('DELETE FROM inventory WHERE user_id = ?', (user_id,))
 
-    # Update inventory
-    cursor.execute('DELETE FROM inventory WHERE user_id = ?', (user_id,))
+            if isinstance(character['Inventory'], dict):
+                for item, quantity in character['Inventory'].items():
+                    for _ in range(quantity):
+                        cursor.execute('INSERT INTO inventory (user_id, item) VALUES (?, ?)', (user_id, item))
+            elif isinstance(character['Inventory'], list):
+                for item in character['Inventory']:
+                    cursor.execute('INSERT INTO inventory (user_id, item) VALUES (?, ?)', (user_id, item))
 
-    for item in character['Inventory']:
+            conn.commit()
+    except sqlite3.Error as e:
+        print(f"Database error in save_characters: {e}")
+    except Exception as e:
+        print(f"Unexpected error in save_characters: {e}")
 
-        cursor.execute('INSERT INTO inventory (user_id, item) VALUES (?, ?)', (user_id, item))
-
-    conn.commit()
-    conn.close()
 
 def create_character(user_id, custom_name):
 
+    # The base character preset data
     character = {
         'Name': custom_name,
         'Level': 1,
@@ -312,6 +338,7 @@ def create_character(user_id, custom_name):
 
 def take_damage(user_id, damage): # A define to be called later on when the users sends his character to fight something
     
+    # Sets character to load_character(user_id)
     character = load_character(user_id)
         
     new_health = character['Health'] - damage # Sets the newHealth to the character current health - the damage it took  
@@ -320,7 +347,7 @@ def take_damage(user_id, damage): # A define to be called later on when the user
         
         character['Health'] = new_health # Attaches the new health back to the character
         
-    save_characters() # Saves the file to the json
+    save_characters(user_id, character) # Saves the file to the json
 
 def get_monsters_for_area(area): # List of monsters and the areas they are in
 
@@ -354,8 +381,10 @@ def get_monsters_for_area(area): # List of monsters and the areas they are in
 
 def Level_up(user_id):
 
+    # Sets character to load_character(user_id)
     character = load_character(user_id)
 
+    # Incase user is not in the database doesnt return anything
     if not character:
 
         return False
@@ -377,13 +406,16 @@ def Level_up(user_id):
 
 def Check_Level_Up(user_id):
 
+    # Sets character to load_character(user_id)
     character = load_character(user_id)
 
+    # Incase user is not in the database doesnt return anything
     if not character:
 
         return False
 
     leveled_up = False
+
     while character['Xp'] >= character['XpToLevelUp']:
         # Deduct XP required for level-up
         character['Xp'] -= character['XpToLevelUp']
@@ -400,11 +432,12 @@ def Generate_Loot(loot_table):
 
     loot_dropped = []
 
+    # Sets it so all the ietms with guaranteed set to true to always drop
     for item, details in loot_table.items():
 
         if details.get('guaranteed', False):
 
-            quantity = details['quantity']
+            quantity = details.get('quantity', 1)
 
             if isinstance(quantity, tuple):
 
@@ -412,34 +445,34 @@ def Generate_Loot(loot_table):
 
             loot_dropped.append((item, quantity))
 
+        # Everything that is not set to true goes through this
         else:
 
             drop_chance = details['chance'] * 100  # Adjust if chance is a fraction (e.g., 0.5 = 50%)
 
             if random.randint(1, 10000) <= drop_chance:  # 1-10000 for 0.01% precision
 
-                loot_quantity = details['quantity']
+                quantity = details.get('quantity', 1)
 
-                quantity = random.randint(loot_quantity[0], loot_quantity[1]) if isinstance(loot_quantity, tuple) else loot_quantity
+                if isinstance(quantity, tuple):
 
+                    quantity = random.randint(quantity[0], quantity[1])
+                
                 loot_dropped.append((item, quantity))
 
     return loot_dropped
 
-
 def add_to_inventory(inventory, item_name, quantity):
-
-    if not inventory:  # Initialize inventory if empty
-        
-        inventory = {}
+    if inventory is None:
+        inventory = {}  # Initialize inventory if it's None
 
     if item_name in inventory:
-
-        inventory[item_name] += quantity
-
+        inventory[item_name] += quantity  # Increment quantity if the item exists
     else:
+        inventory[item_name] = quantity  # Add the new item with the given quantity
 
-        inventory[item_name] = quantity
+    return inventory  # Always return the updated inventory
+
 
 async def battle(ctx, user_id, area):
     user_id = str(ctx.author.id)
@@ -474,20 +507,28 @@ async def battle(ctx, user_id, area):
 
             # Generate loot
             if 'LootTable' in monster and monster['LootTable']:
+
                 loot = Generate_Loot(monster['LootTable'])
+
                 if loot:
+
                     loot_message = f"Loot obtained from {monster['Name']}:\n"
+
                     for item, quantity in loot:
-                        add_to_inventory(character['Inventory'], item, quantity)
+                        # Update inventory
+                        character['Inventory'] = add_to_inventory(character['Inventory'], item, quantity)
                         loot_message += f"- **{item}** x{quantity}\n"
+                        
+                    save_characters(user_id, character)
+
                     await ctx.send(loot_message)
+
                 else:
-                    await ctx.send("No loot obtained from this battle.")
-            else:
-                await ctx.send(f"{monster['Name']} had no loot.")
-            
-            # Save updated character to the database
-            save_characters(user_id, character)
+                    await ctx.send(f"{monster['Name']} dropped no loot.")
+
+                # Save updated character to the database
+                save_characters(user_id, character)
+
             return
 
         # Monster attacks player
@@ -505,7 +546,6 @@ async def battle(ctx, user_id, area):
 
     # Fallback message (should not reach here)
     return "Battle ended unexpectedly."
-
 
 def Spawn_Monster(area): 
     # Balanced monster generation with corrected weighting
@@ -568,7 +608,6 @@ async def start(ctx):
     except asyncio.TimeoutError:
 
         await ctx.send("You took too long to choose a name. Please try again.")
-
 
 @client.command()
 async def profile(ctx):
@@ -635,7 +674,6 @@ async def fight(ctx, area: str):
 
         await ctx.send(f"Congratulations {character['Name']}! You have leveled up!")
 
-
 @client.command()
 async def testlevelup(ctx):
     user_id = str(ctx.author.id)
@@ -655,41 +693,38 @@ async def testlevelup(ctx):
     else:
         await ctx.send("Level-up failed.")
 
-
 @client.command()
 async def resetdata(ctx):
     user_id = str(ctx.author.id)
 
-    if not is_user_in_database:
-        await ctx.send(f"You are not registed in the guild you cant reset your data. Register with '.start'.")
+    # Check if the user is in the database
+    if not is_user_in_database(user_id):
+        await ctx.send("You are not registered in the guild. Register with `.start`.")
         return
 
-    await ctx.send(f"Are you sure you want to leave te guild? Write down 'yes' to confirm.")
+    await ctx.send("Are you sure you want to leave the guild? Type 'yes' to confirm.")
 
     def check(m):
         return m.author == ctx.author and m.channel == ctx.channel and m.content.lower() == "yes"
-    
-    try:
 
+    try:
+        # Wait for confirmation
         await client.wait_for("message", check=check, timeout=30)
 
+        # Reset character data
         reset_character(user_id)
-        await ctx.send(f"You're officially out of the guild. If you ever want to return rype '.start'.")
+        await ctx.send("You have officially left the guild. If you ever want to return, type `.start`.")
 
     except asyncio.TimeoutError:
+        await ctx.send("You took too long to decide. Reset canceled.")
 
-        await ctx.send(f"You took to long to decide if you really want to leave the guild.")
 
-# Fight system:
-# Make about 3 areas each different in difficulty
-# Area 1: Forest
-# Area 2: Mountain/Cave
-# Area 3: Cave or wasteland
-# Extra area idea: Dessert
-
+######################################
 # Make monsters drop loot each different in value
 # Make loot drops like items that the user can use
 # Maybe something like a dungeon later on with a endgame boss
+# Make a shop and a crafting system
+# Change up the Ui with how everything is getting output
 # 
 
 client.run(TOKEN)
