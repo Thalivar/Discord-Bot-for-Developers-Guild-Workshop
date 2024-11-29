@@ -9,6 +9,7 @@ import time
 import sys
 import json
 import sqlite3
+from discord.ext.commands import BucketType, cooldown # type: ignore
 
 #Main ideas
 #Connect it to git/github
@@ -202,7 +203,9 @@ async def rpghelp(ctx):
     Here are the commands to play the rpg game:
     ".start" - To create you character and register into the guild
     ".profile" - To check your profile
-    ".fight" - To fight monsters for the guild"""
+    ".fight" - To fight monsters for the guild
+    ".rest" - To rest and recover your health at the guild inn
+    """
 
     await ctx.send(rpghelp_message)
 
@@ -220,6 +223,7 @@ def is_user_in_database(user_id):
     return user_exists
 
 def load_character(user_id):
+
     try:
         with sqlite3.connect('rpg_game.db') as conn:
             cursor = conn.cursor()
@@ -251,15 +255,18 @@ def load_character(user_id):
             character['Inventory'] = {item: count for item, count in items}
 
             return character
+        
     except sqlite3.Error as e:
         print(f"Database error in load_character: {e}")
         return None
+    
     except Exception as e:
         print(f"Unexpected error in load_character: {e}")
         return None
 
 
 def reset_character(user_id):
+
     try:
         with sqlite3.connect("rpg_game.db") as conn:
             cursor = conn.cursor()
@@ -270,13 +277,16 @@ def reset_character(user_id):
             cursor.execute("DELETE FROM inventory WHERE user_id = ?", (user_id,))
 
             conn.commit()
+
     except sqlite3.Error as e:
         print(f"Database error in reset_character: {e}")
+
     except Exception as e:
         print(f"Unexpected error in reset_character: {e}")
 
 
 def save_characters(user_id, character):
+
     try:
         with sqlite3.connect('rpg_game.db') as conn:
             cursor = conn.cursor()
@@ -309,8 +319,10 @@ def save_characters(user_id, character):
                     cursor.execute('INSERT INTO inventory (user_id, item) VALUES (?, ?)', (user_id, item))
 
             conn.commit()
+
     except sqlite3.Error as e:
         print(f"Database error in save_characters: {e}")
+
     except Exception as e:
         print(f"Unexpected error in save_characters: {e}")
 
@@ -406,27 +418,32 @@ def Level_up(user_id):
 
 def Check_Level_Up(user_id):
 
-    # Sets character to load_character(user_id)
     character = load_character(user_id)
 
-    # Incase user is not in the database doesnt return anything
     if not character:
-
-        return False
+        return None
 
     leveled_up = False
 
     while character['Xp'] >= character['XpToLevelUp']:
         # Deduct XP required for level-up
         character['Xp'] -= character['XpToLevelUp']
-        Level_up(user_id)  # Perform the level-up
+
+        # Apply level-up changes
+        character['Level'] += 1
+        character['Attack'] += 2
+        character['MaxHealth'] += 20
+        character['Defense'] += 1
+        character['XpToLevelUp'] = int(character['XpToLevelUp'] * 1.2)  # Increase XP for next level
+        character['Health'] = character['MaxHealth']  # Restore health
         leveled_up = True
 
-        # Reload character after level-up to ensure accurate state
-        character = load_character(user_id)
-
+    # Save the updated character
     save_characters(user_id, character)
-    return leveled_up
+
+    print(f"Level-up complete. New stats: {character}")
+    return character if leveled_up else None
+
 
 def Generate_Loot(loot_table):
 
@@ -473,7 +490,6 @@ def add_to_inventory(inventory, item_name, quantity):
 
     return inventory  # Always return the updated inventory
 
-
 async def battle(ctx, user_id, area):
     user_id = str(ctx.author.id)
     character = load_character(user_id)
@@ -488,64 +504,75 @@ async def battle(ctx, user_id, area):
         await ctx.send(f"No monsters found in the {area}. Try exploring somewhere else!")
         return
 
-    await ctx.send(f"A wild **{monster['Name']}** appears! Prepare for battle!")
+    # Send initial embed for battle
+    battle_embed = discord.Embed(title=f"Battle: {character['Name']} vs {monster['Name']}", color=discord.Color.red())
+    battle_embed.add_field(name="Monster Stats", value=f"Health: {monster['Health']}, Attack: {monster['Attack']}, Defense: {monster['Defense']}")
+    message = await ctx.send(embed=battle_embed)
 
+    # Battle loop
     while character['Health'] > 0 and monster['Health'] > 0:
         # Player attacks monster
         damage_to_monster = max(character['Attack'] - monster['Defense'], 1)
         monster['Health'] -= damage_to_monster
 
-        if monster['Health'] <= 0:
-            # Monster defeated
-            await ctx.send(f"**{character['Name']}** has defeated the **{monster['Name']}**!")
-            character['Xp'] += monster['XpReward']
-
-            # Check for level-up
-            leveled_up = Check_Level_Up(user_id)
-            if leveled_up:
-                await ctx.send(f" {character['Name']} leveled up to **Level {character['Level']}**!")
-
-            # Generate loot
-            if 'LootTable' in monster and monster['LootTable']:
-
-                loot = Generate_Loot(monster['LootTable'])
-
-                if loot:
-
-                    loot_message = f"Loot obtained from {monster['Name']}:\n"
-
-                    for item, quantity in loot:
-                        # Update inventory
-                        character['Inventory'] = add_to_inventory(character['Inventory'], item, quantity)
-                        loot_message += f"- **{item}** x{quantity}\n"
-                        
-                    save_characters(user_id, character)
-
-                    await ctx.send(loot_message)
-
-                else:
-                    await ctx.send(f"{monster['Name']} dropped no loot.")
-
-                # Save updated character to the database
-                save_characters(user_id, character)
-
-            return
-
         # Monster attacks player
         damage_to_player = max(monster['Attack'] - character['Defense'], 1)
         character['Health'] = max(0, character['Health'] - damage_to_player)
-        await ctx.send(
-            f"**{monster['Name']}** attacks **{character['Name']}** for {damage_to_player} damage! "
-            f"Remaining Health: {character['Health']}/{character['MaxHealth']}"
-        )
 
-        if character['Health'] == 0:
-            await ctx.send(f"**{character['Name']}** was defeated by the **{monster['Name']}**. Rest at the guild to recover.")
-            save_characters(user_id, character)
-            return
+        # Update embed with new stats
+        battle_embed.clear_fields()
+        battle_embed.add_field(name=f"{character['Name']} attacks!", value=f"Dealt {damage_to_monster} damage. Monster HP: {max(monster['Health'], 0)}")
+        battle_embed.add_field(name=f"{monster['Name']} attacks!", value=f"Dealt {damage_to_player} damage. Your HP: {character['Health']}/{character['MaxHealth']}")
+        await message.edit(embed=battle_embed)
+        await asyncio.sleep(1)  # Dramatic pause
 
-    # Fallback message (should not reach here)
-    return "Battle ended unexpectedly."
+        if monster['Health'] <= 0:
+            break
+
+        if character['Health'] <= 0:
+            break
+
+    # Post-battle rewards or defeat screen
+    if character['Health'] > 0:
+        # Monster defeated
+        character['Xp'] += monster['XpReward']
+
+        # Check for level-up and update character
+        updated_character = Check_Level_Up(user_id)
+        if updated_character:
+            character = updated_character  # Use the updated character stats
+
+        # Rewards embed
+        rewards_embed = discord.Embed(title=f"Victory! {character['Name']} defeated {monster['Name']}", color=discord.Color.green())
+        rewards_embed.add_field(name="XP Gained", value=f"{monster['XpReward']}", inline=False)
+
+        if updated_character:
+            rewards_embed.add_field(name="Level Up!", value=f"Level {character['Level']} achieved!", inline=False)
+
+        # Loot generation
+        if 'LootTable' in monster and monster['LootTable']:
+            loot = Generate_Loot(monster['LootTable'])
+            if loot:
+                loot_message = "\n".join([f"- {item}: x{quantity}" for item, quantity in loot])
+                rewards_embed.add_field(name="Loot Collected", value=loot_message, inline=False)
+                for item, quantity in loot:
+                    character['Inventory'] = add_to_inventory(character['Inventory'], item, quantity)
+        else:
+            rewards_embed.add_field(name="Loot Collected", value="No loot dropped.", inline=False)
+
+        # Replace the battle embed with the rewards embed
+        await message.edit(embed=rewards_embed)
+
+    else:
+        # Player defeated
+        defeat_embed = discord.Embed(title=f"Defeat... {character['Name']} was defeated by {monster['Name']}", color=discord.Color.dark_red())
+        defeat_embed.add_field(name="Tip", value="Rest at the guild to recover and try again.")
+        await message.edit(embed=defeat_embed)
+
+    # Save character updates
+    save_characters(user_id, character)
+
+
 
 def Spawn_Monster(area): 
     # Balanced monster generation with corrected weighting
@@ -571,6 +598,7 @@ def Spawn_Monster(area):
     return None           
 
 @client.command()
+@cooldown(1, 5, BucketType.user)
 async def start(ctx):
     user_id = str(ctx.author.id)
 
@@ -611,44 +639,129 @@ async def start(ctx):
 
 @client.command()
 async def profile(ctx):
-
-    await asyncio.sleep(0.5)  # Optional delay to ensure database updates are complete
+    """
+    Command to display the player's profile using an embed with emojis and a two-column inventory.
+    """
     user_id = str(ctx.author.id)
-    
-    if not is_user_in_database(user_id):
 
+    # Load the character from the database
+    character = load_character(user_id)
+
+    if not character:
+        # User is not in the database
         await ctx.send("You are not enlisted in the guild traveler. Join the guild with `.start`.")
         return
 
-    character = load_character(user_id)
-
+    # XP progress bar
     xp_bar_length = 15
     xp_progress = character['Xp'] / character['XpToLevelUp']
     xp_filled = int(xp_progress * xp_bar_length)
     xp_empty = xp_bar_length - xp_filled
-
     xp_bar = f"[{'#' * xp_filled}{' ' * xp_empty}] {character['Xp']} / {character['XpToLevelUp']}"
 
-    if character.get('inventory'):
-        
-        inventory_items = ', ' .join(character['inventory']) if character['inventory'] else "Empty"
-    
-    else:
-        inventory_items = "Empty"
+    # Split inventory into two columns
+    inventory_items = [f"{item}: x{quantity}" for item, quantity in character['Inventory'].items()]
+    half = len(inventory_items) // 2 + (len(inventory_items) % 2)  # Split inventory roughly in half
+    column_1 = inventory_items[:half]
+    column_2 = inventory_items[half:]
 
-    profile_message = (
-        f"**Profile of {character['Name']}**\n"
-        f"**Level:** {character['Level']}\n"
-        f"**Xp:** {xp_bar}\n"
-        f"**Health:** {character['Health']}/{character['MaxHealth']}\n"
-        f"**Defense:** {character['Defense']}\n"
-        f"**Attack:** {character['Attack']}\n"
-        f"**Inventory:** {inventory_items}"
+    # Create embed for the profile
+    profile_embed = discord.Embed(
+        title=f"Profile of {character['Name']}",
+        color=discord.Color.blue(),
+        description="Here are your current stats and inventory."
     )
+    profile_embed.add_field(name="🏅 Level", value=character['Level'], inline=True)
+    profile_embed.add_field(name="🌟 XP", value=xp_bar, inline=True)
+    profile_embed.add_field(name="❤️ Health", value=f"{character['Health']} / {character['MaxHealth']}", inline=True)
+    profile_embed.add_field(name="🛡️ Defense", value=character['Defense'], inline=True)
+    profile_embed.add_field(name="⚔️ Attack", value=character['Attack'], inline=True)
 
-    await ctx.send(profile_message)
+    # Add inventory fields
+    if inventory_items:
+        profile_embed.add_field(name="🎒 Inventory (1/2)", value="\n".join(column_1), inline=True)
+        if len(column_2) > 0:  # Only add column 2 if it has items
+            profile_embed.add_field(name="🎒 Inventory (2/2)", value="\n".join(column_2), inline=True)
+    else:
+        profile_embed.add_field(name="🎒 Inventory", value="Empty", inline=False)
+
+    profile_embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+
+    # Send the profile embed
+    await ctx.send(embed=profile_embed)
+
+
+
 
 @client.command()
+@cooldown(1, 5, BucketType.user)  # 1 use per 5 seconds
+async def rest(ctx):
+    """
+    Command to heal the user over 5 seconds, updating an embed with progress.
+    """
+    user_id = str(ctx.author.id)
+
+    # Load the character
+    character = load_character(user_id)
+
+    if not character:
+        await ctx.send("You are not enlisted in the guild, traveler. Use `.start` to join.")
+        return
+
+    if character['Health'] >= character['MaxHealth']:
+        # Use an embed to notify the user
+        full_health_embed = discord.Embed(
+            title="Resting Not Needed",
+            description=f"{character['Name']} is already at full health!",
+            color=discord.Color.gold()
+        )
+        await ctx.send(embed=full_health_embed)
+        return
+
+    heal_amount = character['MaxHealth'] // 5  # Heal 20% of max health per second
+    total_time = 5  # Total rest duration in seconds
+
+    # Create initial embed
+    rest_embed = discord.Embed(
+        title=f"{character['Name']} is resting...",
+        description="Healing in progress...",
+        color=discord.Color.blue()
+    )
+    rest_embed.add_field(name="Health", value=f"{character['Health']} / {character['MaxHealth']}")
+    message = await ctx.send(embed=rest_embed)
+
+    try:
+        for second in range(1, total_time + 1):
+            # Increment health
+            character['Health'] = min(character['MaxHealth'], character['Health'] + heal_amount)
+
+            # Update embed with progress
+            rest_embed.clear_fields()
+            rest_embed.add_field(name="Health", value=f"{character['Health']} / {character['MaxHealth']}")
+            rest_embed.set_footer(text=f"Resting... {second}/{total_time} seconds elapsed")
+            await message.edit(embed=rest_embed)
+
+            await asyncio.sleep(1)  # Wait 1 second between updates
+
+            if character['Health'] >= character['MaxHealth']:
+                break
+
+        # Final embed to show completion
+        rest_embed.title = f"{character['Name']} is fully rested!"
+        rest_embed.description = "Resting complete. You are ready for your next adventure!"
+        rest_embed.color = discord.Color.green()
+        rest_embed.clear_fields()
+        rest_embed.add_field(name="Health", value=f"{character['Health']} / {character['MaxHealth']}")
+        await message.edit(embed=rest_embed)
+
+        # Save updated health to the database
+        save_characters(user_id, character)
+
+    except Exception as e:
+        await ctx.send(f"An error occurred during rest: {str(e)}")
+
+@client.command()
+@cooldown(1, 5, BucketType.user)
 async def fight(ctx, area: str):
     user_id = str(ctx.author.id)
 
@@ -675,6 +788,7 @@ async def fight(ctx, area: str):
         await ctx.send(f"Congratulations {character['Name']}! You have leveled up!")
 
 @client.command()
+@cooldown(1, 5, BucketType.user)
 async def testlevelup(ctx):
     user_id = str(ctx.author.id)
 
@@ -694,6 +808,7 @@ async def testlevelup(ctx):
         await ctx.send("Level-up failed.")
 
 @client.command()
+@cooldown(1, 5, BucketType.user)
 async def resetdata(ctx):
     user_id = str(ctx.author.id)
 
