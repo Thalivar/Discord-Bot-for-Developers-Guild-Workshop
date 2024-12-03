@@ -225,7 +225,9 @@ def is_user_in_database(user_id):
 def load_character(user_id):
 
     try:
+
         with sqlite3.connect('rpg_game.db') as conn:
+
             cursor = conn.cursor()
 
             # Fetch character data
@@ -233,6 +235,7 @@ def load_character(user_id):
             character_row = cursor.fetchone()
 
             if not character_row:
+
                 return None
 
             # Convert character to dictionary
@@ -257,10 +260,12 @@ def load_character(user_id):
             return character
         
     except sqlite3.Error as e:
+
         print(f"Database error in load_character: {e}")
         return None
     
     except Exception as e:
+
         print(f"Unexpected error in load_character: {e}")
         return None
 
@@ -268,7 +273,9 @@ def load_character(user_id):
 def reset_character(user_id):
 
     try:
+
         with sqlite3.connect("rpg_game.db") as conn:
+
             cursor = conn.cursor()
 
             # Delete character data
@@ -279,16 +286,20 @@ def reset_character(user_id):
             conn.commit()
 
     except sqlite3.Error as e:
+
         print(f"Database error in reset_character: {e}")
 
     except Exception as e:
+
         print(f"Unexpected error in reset_character: {e}")
 
 
 def save_characters(user_id, character):
 
     try:
+
         with sqlite3.connect('rpg_game.db') as conn:
+
             cursor = conn.cursor()
 
             # Save character stats
@@ -311,19 +322,27 @@ def save_characters(user_id, character):
             cursor.execute('DELETE FROM inventory WHERE user_id = ?', (user_id,))
 
             if isinstance(character['Inventory'], dict):
+
                 for item, quantity in character['Inventory'].items():
+
                     for _ in range(quantity):
+
                         cursor.execute('INSERT INTO inventory (user_id, item) VALUES (?, ?)', (user_id, item))
+
             elif isinstance(character['Inventory'], list):
+
                 for item in character['Inventory']:
+
                     cursor.execute('INSERT INTO inventory (user_id, item) VALUES (?, ?)', (user_id, item))
 
             conn.commit()
 
     except sqlite3.Error as e:
+
         print(f"Database error in save_characters: {e}")
 
     except Exception as e:
+
         print(f"Unexpected error in save_characters: {e}")
 
 
@@ -421,6 +440,7 @@ def Check_Level_Up(user_id):
     character = load_character(user_id)
 
     if not character:
+
         return None
 
     leveled_up = False
@@ -480,27 +500,36 @@ def Generate_Loot(loot_table):
     return loot_dropped
 
 def add_to_inventory(inventory, item_name, quantity):
+
     if inventory is None:
+
         inventory = {}  # Initialize inventory if it's None
 
     if item_name in inventory:
+
         inventory[item_name] += quantity  # Increment quantity if the item exists
+
     else:
+
         inventory[item_name] = quantity  # Add the new item with the given quantity
 
     return inventory  # Always return the updated inventory
 
 async def battle(ctx, user_id, area):
+
     user_id = str(ctx.author.id)
     character = load_character(user_id)
 
     if not character:
+
         await ctx.send("You need to join the guild first! Use `.start` to create your character.")
         return
 
     # Spawn a monster for the area
     monster = Spawn_Monster(area)
+
     if not monster:
+
         await ctx.send(f"No monsters found in the {area}. Try exploring somewhere else!")
         return
 
@@ -540,6 +569,7 @@ async def battle(ctx, user_id, area):
         # Check for level-up and update character
         updated_character = Check_Level_Up(user_id)
         if updated_character:
+
             character = updated_character  # Use the updated character stats
 
         # Rewards embed
@@ -547,17 +577,24 @@ async def battle(ctx, user_id, area):
         rewards_embed.add_field(name="XP Gained", value=f"{monster['XpReward']}", inline=False)
 
         if updated_character:
+
             rewards_embed.add_field(name="Level Up!", value=f"Level {character['Level']} achieved!", inline=False)
 
         # Loot generation
         if 'LootTable' in monster and monster['LootTable']:
+
             loot = Generate_Loot(monster['LootTable'])
+
             if loot:
+
                 loot_message = "\n".join([f"- {item}: x{quantity}" for item, quantity in loot])
                 rewards_embed.add_field(name="Loot Collected", value=loot_message, inline=False)
+
                 for item, quantity in loot:
+
                     character['Inventory'] = add_to_inventory(character['Inventory'], item, quantity)
         else:
+
             rewards_embed.add_field(name="Loot Collected", value="No loot dropped.", inline=False)
 
         # Replace the battle embed with the rewards embed
@@ -604,14 +641,23 @@ async def start(ctx):
 
     # Check if the user already exists in the database
     if is_user_in_database(user_id):
-
-        await ctx.send(f"You are already in the guild, adventurer.")
+        embed = discord.Embed(
+            title = "Already a member",
+            description = "You are already part of the guild, adventurer.",
+            color = discord.Color.orange()
+        )
+        await ctx.send(embed = embed)
         return
 
-    await ctx.send(f"Welcome adventurer! Please write down your preferred name in the guild list:")
+    embed = discord.Embed(
+        title = "Welcome adventurer!",
+        description = "Please write down your preffered name in the guild list",
+        color = discord.Color.blue()
+    )
+    embed.set_footer(text = "You have 30 seconds to respond.")
+    message = await ctx.send(embed = embed)
 
     def check(msg):
-
         return msg.author == ctx.author and len(msg.content) > 0
 
     try:
@@ -624,18 +670,24 @@ async def start(ctx):
 
         # Debugging: Ensure the user is now in the database
         if is_user_in_database(user_id):
-
             print(f"User successfully added to the database: user_id={user_id}")
-
         else:
-
             print(f"Failed to add user to the database: user_id={user_id}")
 
-        await ctx.send(f"Adventurer {custom_name} has joined the guild! You can now go out and slay monsters for the guild.")
+        embed = discord.Embed(
+            title = "Adventurer Registered!",
+            description = f"Adventurer **{custom_name}** has joined the guild! You can now go out and slay monsters for the guild.",
+            color = discord.Color.green()
+        )
+        await message.edit(embed = embed)
 
     except asyncio.TimeoutError:
-
-        await ctx.send("You took too long to choose a name. Please try again.")
+        embed = discord.Embed(
+            title = "Timedout.",
+            description = "You took to long to write down your name adventurer.",
+            color = discord.Color.red()
+        )
+        await message.edit(embed = embed)
 
 @client.command()
 async def profile(ctx):
@@ -649,7 +701,12 @@ async def profile(ctx):
 
     if not character:
         # User is not in the database
-        await ctx.send("You are not enlisted in the guild traveler. Join the guild with `.start`.")
+        embed = discord.Embed(
+            title = "Not a member.",
+            description = "You aren't a member of the guild yet adventurer. Join with '.start'.",
+            color = discord.Color.orange()
+        )
+        await ctx.send(embed = embed)
         return
 
     # XP progress bar
@@ -659,11 +716,11 @@ async def profile(ctx):
     xp_empty = xp_bar_length - xp_filled
     xp_bar = f"[{'#' * xp_filled}{' ' * xp_empty}] {character['Xp']} / {character['XpToLevelUp']}"
 
-    # Split inventory into two columns
+    # Makes the inventory 3 items per row
     inventory_items = [f"{item}: x{quantity}" for item, quantity in character['Inventory'].items()]
-    half = len(inventory_items) // 2 + (len(inventory_items) % 2)  # Split inventory roughly in half
-    column_1 = inventory_items[:half]
-    column_2 = inventory_items[half:]
+    items_per_row = 3
+    rows = [inventory_items[i:i + items_per_row] for i in range(0, len(inventory_items), items_per_row)]
+    formatted_inventory = "\n".join([",   ".join(row) for row in rows])
 
     # Create embed for the profile
     profile_embed = discord.Embed(
@@ -679,13 +736,12 @@ async def profile(ctx):
 
     # Add inventory fields
     if inventory_items:
-        profile_embed.add_field(name="🎒 Inventory (1/2)", value="\n".join(column_1), inline=True)
-        if len(column_2) > 0:  # Only add column 2 if it has items
-            profile_embed.add_field(name="🎒 Inventory (2/2)", value="\n".join(column_2), inline=True)
-    else:
-        profile_embed.add_field(name="🎒 Inventory", value="Empty", inline=False)
+        profile_embed.add_field(name = "🎒 Inventory (1/2)", value = formatted_inventory, inline = False)
 
-    profile_embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+    else:
+        profile_embed.add_field(name = "🎒 Inventory", value="Empty", inline = False)
+
+    profile_embed.set_footer(text = f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
 
     # Send the profile embed
     await ctx.send(embed=profile_embed)
@@ -705,7 +761,12 @@ async def rest(ctx):
     character = load_character(user_id)
 
     if not character:
-        await ctx.send("You are not enlisted in the guild, traveler. Use `.start` to join.")
+        embed = discord.Embed(
+            title = "Not a member.",
+            description = "You aren't a member of the guild yet adventurer. Join with '.start'.",
+            color = discord.Color.orange()
+        )
+        await ctx.send(embed = embed)
         return
 
     if character['Health'] >= character['MaxHealth']:
@@ -766,8 +827,12 @@ async def fight(ctx, area: str):
     user_id = str(ctx.author.id)
 
     if not is_user_in_database(user_id):
-
-        await ctx.send("You are not enlisted in the guild traveler. Join the guild with `.start`.")
+        embed = discord.Embed(
+            title = "Not a member.",
+            description = "You aren't a member of the guild yet adventurer. Join with '.start'.",
+            color = discord.Color.orange()
+        )
+        await ctx.send(embed = embed)
         return
 
     character = load_character(user_id)
