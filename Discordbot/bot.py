@@ -269,7 +269,6 @@ def load_character(user_id):
         print(f"Unexpected error in load_character: {e}")
         return None
 
-
 def reset_character(user_id):
 
     try:
@@ -292,7 +291,6 @@ def reset_character(user_id):
     except Exception as e:
 
         print(f"Unexpected error in reset_character: {e}")
-
 
 def save_characters(user_id, character):
 
@@ -345,7 +343,6 @@ def save_characters(user_id, character):
 
         print(f"Unexpected error in save_characters: {e}")
 
-
 def create_character(user_id, custom_name):
 
     # The base character preset data
@@ -384,7 +381,7 @@ def get_monsters_for_area(area): # List of monsters and the areas they are in
 
     areas = {
         'Forest': [
-            {'Name': 'Bunny', 'Health': 20, 'Attack': 11, 'Defense': 1, 'XpReward': 10, 'Rarity': 'common', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 5), 'guaranteed': True}, 'Rabbit Fur': {'chance': 10, 'quantity': 1, 'guaranteed': False}}},
+            {'Name': 'Bunny', 'Health': 20, 'Attack': 11, 'Defense': 1, 'XpReward': 10, 'Rarity': 'common', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 5), 'guaranteed': True}, 'Bunny Fur': {'chance': 10, 'quantity': 1, 'guaranteed': False}}},
             {'Name': 'Wolf', 'Health': 20, 'Attack': 11, 'Defense': 2, 'XpReward': 20, 'Rarity': 'common', 'LootTable': {'Wolf Pelt': {'chance': 80, 'quantity': (1, 2), 'guaranteed': True}, 'Wolf Bone': {'chance': 20, 'quantity': 1, 'guaranteed': False}}},
             {'Name': 'Boar', 'Health': 20, 'Attack': 15, 'Defense': 2, 'XpReward': 30, 'Rarity': 'uncommon', 'LootTable': {'Boar Pelt': {'chance': 70, 'quantity': (1, 3), 'guaranteed': True}, 'Tusk': {'chance': 30, 'quantity': 1, 'guaranteed': False}}},
             {'Name': 'Treant', 'Health': 20, 'Attack': 11, 'Defense': 1, 'XpReward': 35, 'Rarity': 'rare', 'LootTable': {'Treant bark': {'chance': 70, 'quantity': (1, 5), 'guaranteed': True}, 'Treant Sap': {'chance': 29, 'quantity': (1, 3), 'guaranteed': False}, 'Treant Heart': {'chance': 1, 'quantity': 1, 'guaranteed': False}}},
@@ -395,20 +392,53 @@ def get_monsters_for_area(area): # List of monsters and the areas they are in
             {'Name': 'Giant Spider', 'Health': 100, 'Attack': 15, 'Defense': 7, 'XpReward': 60, 'Rarity': 'uncommon', 'LootTable': {'Spider Legs': {'chance': 80, 'quantity': (1, 8), 'guaranteed': True}, 'Spider Eyes': {'chance': 20, 'quantity': (1, 10), 'guaranteed': False}}},
             {'Name': 'Goblin', 'Health': 200, 'Attack': 25, 'Defense': 12, 'XpReward': 75, 'Rarity': 'rare', 'LootTable': {'Goblin Teeth': {'chance': 69, 'quantity': (1, 8), 'guaranteed': True}, 'Goblin Hide': {'chance': 30, 'quantity': (1, 3), 'guaranteed': False}, 'Goblin Hammer': {'chance': 1, 'quantity': 1, 'guaranteed': False}}},
             {'Name': 'Basilisk', 'Health': 100, 'Attack': 20, 'Defense': 20, 'XpReward': 175, 'Rarity': 'epic', 'LootTable': {'Basilisk Skin': {'chance': 79, 'quantity': (1, 4), 'guaranteed': True}, 'Basalisk Teeth': {'chance': 20, 'quantity': (1, 10), 'guaranteed': False}, 'Basalisk Scale': {'chance': 1, 'quantity': (1, 5), 'guaranteed': False}}},
-            {'Name': 'Mimic', 'Health': 150, 'Attack': 60, 'Defense': 34, 'XpReward': 300, 'Rarity': 'legendary', 'LootTable': {'Gold Coins': {'chance': 79, 'quantity': (1, 15), 'guaranteed': True}, 'Mixed Gems': {'chance': 20, 'quantity': (1, 4), 'guaranteed': False}, 'Diamond': {'chance': 1, 'quantity': (1, 3), 'guaranteed': False}}},
-            {'Name': 'Gostir The Three Headed Dragon', 'Health': 300, 'Attack': 30, 'Defense': 50, 'XpReward': 500, 'Rarity': 'legendary', 'LootTable': {'Gold Coins': {'chance': 69, 'quantity': (1, 25), 'guaranteed': True}, 'Dragon Scale': {'chance': 30, 'quantity': (1, 8), 'guaranteed': False}, 'The Dragon Slayer': {'chance': 1, 'quantity': 1, 'guaranteed': False}}}
+            {'Name': 'Mimic', 'Health': 150, 'Attack': 60, 'Defense': 34, 'XpReward': 300, 'Rarity': 'legendary', 'LootTable': {'Mimic Gold Coins': {'chance': 79, 'quantity': (1, 15), 'guaranteed': True}, 'Mixed Gems': {'chance': 20, 'quantity': (1, 4), 'guaranteed': False}, 'Diamond': {'chance': 1, 'quantity': (1, 3), 'guaranteed': False}}},
+            {'Name': 'Gostir The Three Headed Dragon', 'Health': 300, 'Attack': 30, 'Defense': 50, 'XpReward': 500, 'Rarity': 'legendary', 'LootTable': {'Dragon Gold Coins': {'chance': 69, 'quantity': (1, 25), 'guaranteed': True}, 'Dragon Scale': {'chance': 30, 'quantity': (1, 8), 'guaranteed': False}, 'The Dragon Slayer': {'chance': 1, 'quantity': 1, 'guaranteed': False}}}
         ],
         'Desert': [
             {'Name': 'Giant Scorpions', 'Health': 150, 'Attack': 40, 'Defense': 10, 'XpReward': 250, 'Rarity': 'common', 'LootTable': {'Stinger': {'chance': 79, 'quantity': (1, 3), 'guaranteed': True}, 'Scorpion Claw': {'chance': 20, 'quantity': (1, 2), 'guaranteed': False}, 'Venow Gland': {'chance': 1, 'quantity': (1, 2), 'guaranteed': False}}},
-            {'Name': 'Mummy', 'Health': 250, 'Attack': 30, 'Defense': 15, 'XpReward': 400, 'Rarity': 'uncommon', 'LootTable': {'Bandage': {'chance': 90, 'quantity': (1, 7), 'guaranteed': True}, 'Mummy Bone': {'chance': 10, 'quantity': (1, 10), 'guaranteed': False}}},
+            {'Name': 'Mummy', 'Health': 250, 'Attack': 30, 'Defense': 15, 'XpReward': 400, 'Rarity': 'uncommon', 'LootTable': {'Mummy Bandage': {'chance': 90, 'quantity': (1, 7), 'guaranteed': True}, 'Mummy Bone': {'chance': 10, 'quantity': (1, 10), 'guaranteed': False}}},
             {'Name': 'Giant Lizards', 'Health': 200, 'Attack': 50, 'Defense': 15, 'XpReward': 420, 'Rarity': 'uncommon', 'LootTable': {'Giant Lizard Meat': {'chance': 70, 'quantity': (1, 7), 'guaranteed': True}, 'Giant Lizard Eye': {'chance': 20, 'quantity': (1, 2), 'guaranteed': False}, 'Giant Lizard Scale': {'chance': 10, 'quantity': (1, 5), 'guaranteed': False}}},
             {'Name': 'Group of Bandits', 'Health': 250, 'Attack': 60, 'Defense': 25, 'XpReward': 500, 'Rarity': 'rare', 'LootTable': {'Ripped Cloth': {'chance': 89, 'quantity': (1, 5), 'guaranteed': True}, 'Bandit Helmet': {'chance': 10, 'quantity': 1, 'guaranteed': False}, 'Bandit Scimitar': {'chance': 1, 'quantity': 1, 'guaranteed': False}}},
             {'Name': 'Air Elemental', 'Health': 300, 'Attack': 100, 'Defense': 50, 'XpReward': 600, 'Rarity': 'epic', 'LootTable': {'Air Element': {'chance': 74, 'quantity': (1, 8), 'guaranteed': True}, 'Air Elemental Core': {'chance': 15, 'quantity': 1, 'guaranteed': False}, 'Air Elemental Essence': {'chance': 1, 'quantity': 1, 'guaranteed': False}}},
             {'Name': 'Djinn', 'Health': 250, 'Attack': 150, 'Defense': 75, 'XpReward': 750, 'Rarity': 'epic', 'LootTable': {'Broken Djinn Lamp': {'chance': 89.5, 'quantity': 1, 'guaranteed': True}, 'Djinn Essence': {'chance': 10, 'quantity': 1, 'guaranteed': False}, 'Djinns Flaming Scimitar': {'chance': 0.5, 'quantity': 1, 'guaranteed': False}}},
-            {'Name': 'Brass Dragon', 'Health': 750, 'Attack': 110, 'Defense': 100, 'XpReward': 1500, 'Rarity': 'legendary', 'LootTable': {'Gold Coins': {'chance': 88.5, 'quantity': (1, 3), 'guaranteed': True}, 'Dragon Scale': {'chance': 10, 'quantity': 1, 'guaranteed': False}, 'Dragon Scale Mail': {'chance': 1, 'quantity': 1, 'guaranteed': False}, 'Brass Dragon Heart': {'chance': 0.5, 'quantity': 1, 'guaranteed': False}}}
+            {'Name': 'Brass Dragon', 'Health': 750, 'Attack': 110, 'Defense': 100, 'XpReward': 1500, 'Rarity': 'legendary', 'LootTable': {'Dragon Gold Coins': {'chance': 88.5, 'quantity': (1, 3), 'guaranteed': True}, 'Dragon Scale': {'chance': 10, 'quantity': 1, 'guaranteed': False}, 'Dragon Scale Mail': {'chance': 1, 'quantity': 1, 'guaranteed': False}, 'Brass Dragon Heart': {'chance': 0.5, 'quantity': 1, 'guaranteed': False}}}
         ]
     }
     return areas.get(area, None)
+
+def get_shop_items():
+
+    return [
+        {"item_name": "Health Potion", "buy_price": 50, "sell_price": 10, "type": "consumable", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Wooden Sword", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Iron Sword", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Wooden Shield", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Metal Shield", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Leather Helmet", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Leather Vest", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Leather Pants", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Leather Boots", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Chainmail Helmet", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Chainmail Vest", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Chainmail Pants", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Chainmail Boots", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Iron Helmet", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Iron Vest", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Iron Pants", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Iron Boots", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
+    ]
+
+def get_craftable_items():
+    return [
+        {"item_name": "Prowler's Stride", "materials": {"Carrot": 1, "Bunny Fur": 1}, "type": "equipment", "effect": {"health": 100,}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Fenrin's Edge", "materials": {"Carrot": 1, "Bunny Fur": 1}, "type": "equipment", "effect": {"attack": 25}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Gostir's Plate", "materials": {"Carrot": 1, "Bunny Fur": 1}, "type": "equipment", "effect": {"health": 150}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Fenrin's Inferno", "materials": {"Carrot": 1, "Bunny Fur": 1}, "type": "equipment", "effect": {"attack": 50}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Eternal Shroud", "materials": {"Carrot": 1, "Bunny Fur": 1}, "type": "equipment", "effect": {"health":2050}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Dragonwoven Shroud", "materials": {"Carrot": 1, "Bunny Fur": 1}, "type": "equipment", "effect": {"health": 250}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Venomcrest Helm", "materials": {"Carrot": 1, "Bunny Fur": 1}, "type": "equipment", "effect": {"health": 300}, "description": "Restores 50 health when the potion is consumed."}
+    ]
 
 def Level_up(user_id):
 
@@ -463,7 +493,6 @@ def Check_Level_Up(user_id):
 
     print(f"Level-up complete. New stats: {character}")
     return character if leveled_up else None
-
 
 def Generate_Loot(loot_table):
 
@@ -609,8 +638,6 @@ async def battle(ctx, user_id, area):
     # Save character updates
     save_characters(user_id, character)
 
-
-
 def Spawn_Monster(area): 
     # Balanced monster generation with corrected weighting
     monsters = get_monsters_for_area(area)
@@ -691,9 +718,6 @@ async def start(ctx):
 
 @client.command()
 async def profile(ctx):
-    """
-    Command to display the player's profile using an embed with emojis and a two-column inventory.
-    """
     user_id = str(ctx.author.id)
 
     # Load the character from the database
@@ -746,15 +770,9 @@ async def profile(ctx):
     # Send the profile embed
     await ctx.send(embed=profile_embed)
 
-
-
-
 @client.command()
 @cooldown(1, 5, BucketType.user)  # 1 use per 5 seconds
 async def rest(ctx):
-    """
-    Command to heal the user over 5 seconds, updating an embed with progress.
-    """
     user_id = str(ctx.author.id)
 
     # Load the character
@@ -851,6 +869,25 @@ async def fight(ctx, area: str):
     if Check_Level_Up(user_id):
 
         await ctx.send(f"Congratulations {character['Name']}! You have leveled up!")
+
+@client.command()
+@cooldown(1, 5, BucketType.user)
+async def shop(ctx):
+    user_id = str(ctx.author.id)
+
+    if not is_user_in_database(user_id):
+        embed = discord.Embed(
+            title = "Not a member.",
+            description = "You aren't a member of the guild yet adventurer. Join with '.start'.",
+            color = discord.Color.orange()
+        )
+        await ctx.send(embed = embed)
+        return
+    
+    character = load_character(user_id)
+    shop_items = get_shop_items
+
+
 
 @client.command()
 @cooldown(1, 5, BucketType.user)
