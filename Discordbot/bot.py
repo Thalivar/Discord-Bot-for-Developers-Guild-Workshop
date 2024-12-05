@@ -410,23 +410,26 @@ def get_monsters_for_area(area): # List of monsters and the areas they are in
 def get_shop_items():
 
     return [
-        {"item_name": "Health Potion", "buy_price": 50, "sell_price": 10, "type": "consumable", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
-        {"item_name": "Wooden Sword", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
-        {"item_name": "Iron Sword", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
-        {"item_name": "Wooden Shield", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
-        {"item_name": "Metal Shield", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
-        {"item_name": "Leather Helmet", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
-        {"item_name": "Leather Vest", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
-        {"item_name": "Leather Pants", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
-        {"item_name": "Leather Boots", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
-        {"item_name": "Chainmail Helmet", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
-        {"item_name": "Chainmail Vest", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
-        {"item_name": "Chainmail Pants", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
-        {"item_name": "Chainmail Boots", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
-        {"item_name": "Iron Helmet", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
-        {"item_name": "Iron Vest", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
-        {"item_name": "Iron Pants", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
-        {"item_name": "Iron Boots", "buy_price": 50, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Health Potion", "buy_price": 1, "sell_price": 10, "type": "consumable", "effect": {"heal": 50}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Mana Potion", "buy_price": 1, "sell_price": 10, "type": "consumable", "effect": {"heal": 50}, "description": "Restores 50 mana when the potion is consumed."},
+        {"item_name": "Big Health Potion", "buy_price": 1, "sell_price": 10, "type": "consumable", "effect": {"heal": 50}, "description": "Restores 200 health when the potion is consumed."},
+        {"item_name": "Big Mana Potion", "buy_price": 1, "sell_price": 10, "type": "consumable", "effect": {"heal": 50}, "description": "Restores 200 mana when the potion is consumed."},
+        {"item_name": "Wooden Sword", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Sword made out of wood to start fighting monsters."},
+        {"item_name": "Iron Sword", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Trusty upgrade from the wooden sword."},
+        {"item_name": "Wooden Shield", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Everybody's trusty wooden shield to block those nasty bites."},
+        {"item_name": "Metal Shield", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The upgraded version of the wooden shield."},
+        {"item_name": "Leather Helmet", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The starter leather armor set."},
+        {"item_name": "Leather Vest", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The starter leather armor set."},
+        {"item_name": "Leather Pants", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The starter leather armor set."},
+        {"item_name": "Leather Boots", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The starter leather armor set."},
+        {"item_name": "Chainmail Helmet", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The next best armor set after leather."},
+        {"item_name": "Chainmail Vest", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The next best armor set after leather."},
+        {"item_name": "Chainmail Pants", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The next best armor set after leather."},
+        {"item_name": "Chainmail Boots", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The next best armor set after leather."},
+        {"item_name": "Iron Helmet", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The best buyable armor set there is."},
+        {"item_name": "Iron Vest", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The best buyable armor set there is."},
+        {"item_name": "Iron Pants", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The best buyable armor set there is."},
+        {"item_name": "Iron Boots", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The best buyable armor set there is."},
     ]
 
 def get_craftable_items():
@@ -717,6 +720,7 @@ async def start(ctx):
         await message.edit(embed = embed)
 
 @client.command()
+@cooldown(1, 5, BucketType.user)
 async def profile(ctx):
     user_id = str(ctx.author.id)
 
@@ -726,12 +730,17 @@ async def profile(ctx):
     if not character:
         # User is not in the database
         embed = discord.Embed(
-            title = "Not a member.",
-            description = "You aren't a member of the guild yet adventurer. Join with '.start'.",
-            color = discord.Color.orange()
+            title="Not a member.",
+            description="You aren't a member of the guild yet adventurer. Join with '.start'.",
+            color=discord.Color.orange()
         )
-        await ctx.send(embed = embed)
+        await ctx.send(embed=embed)
         return
+
+    # Ensure the character has coins initialized
+    if "coins" not in character:
+        character["coins"] = 100  # Default starting coins
+        save_characters(user_id, character)
 
     # XP progress bar
     xp_bar_length = 15
@@ -757,18 +766,23 @@ async def profile(ctx):
     profile_embed.add_field(name="❤️ Health", value=f"{character['Health']} / {character['MaxHealth']}", inline=True)
     profile_embed.add_field(name="🛡️ Defense", value=character['Defense'], inline=True)
     profile_embed.add_field(name="⚔️ Attack", value=character['Attack'], inline=True)
+    profile_embed.add_field(name="💰 Coins", value=f"{character['coins']} coins", inline=True)
 
     # Add inventory fields
     if inventory_items:
-        profile_embed.add_field(name = "🎒 Inventory (1/2)", value = formatted_inventory, inline = False)
-
+        profile_embed.add_field(name="🎒 Inventory", value=formatted_inventory, inline=False)
     else:
-        profile_embed.add_field(name = "🎒 Inventory", value="Empty", inline = False)
+        profile_embed.add_field(name="🎒 Inventory", value="Empty", inline=False)
 
-    profile_embed.set_footer(text = f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
+    profile_embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar.url)
 
     # Send the profile embed
     await ctx.send(embed=profile_embed)
+
+@client.command()
+@cooldown(1, 5, BucketType.user)
+async def equip(ctx):
+    user_id = str(ctx.author.id)
 
 @client.command()
 @cooldown(1, 5, BucketType.user)  # 1 use per 5 seconds
@@ -877,17 +891,117 @@ async def shop(ctx):
 
     if not is_user_in_database(user_id):
         embed = discord.Embed(
-            title = "Not a member.",
-            description = "You aren't a member of the guild yet adventurer. Join with '.start'.",
-            color = discord.Color.orange()
+            title="Not a member.",
+            description="You aren't a member of the guild yet adventurer. Join with '.start'.",
+            color=discord.Color.orange()
         )
-        await ctx.send(embed = embed)
+        await ctx.send(embed=embed)
         return
-    
+
     character = load_character(user_id)
-    shop_items = get_shop_items
 
+    # Ensure the character has 'coins' initialized
+    if "coins" not in character:
+        character["coins"] = 100  # Default starting coins
+        save_characters(user_id, character)
 
+    shop_items = get_shop_items()
+    item_per_page = 4
+    total_pages = (len(shop_items) + item_per_page - 1) // item_per_page
+    current_page = 0
+
+    numbered_emojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣"]
+    navigation_emojis = ["⬅️", "➡️", "❌"]
+
+    def create_shop_embed(page):
+        start = page * item_per_page
+        end = start + item_per_page
+        items = shop_items[start:end]
+
+        embed = discord.Embed(
+            title="Guild Shop",
+            description=f"Page {page + 1}/{total_pages}",
+            color=discord.Color.gold()
+        )
+
+        for i, item in enumerate(items, start=1):
+            emoji = numbered_emojis[i - 1]
+            embed.add_field(
+                name=f"{emoji} {item['item_name']} - {item['buy_price']} coins.",
+                value=item['description'],
+                inline=False
+            )
+
+        embed.set_footer(text=f"Page {page + 1}/{total_pages}. React to buy, ⬅️⬅️, or ❌ to close.")
+        return embed
+
+    shop_embed = create_shop_embed(current_page)
+    message = await ctx.send(embed=shop_embed)
+
+    # Add reactions for navigation and selection
+    for emoji in navigation_emojis + numbered_emojis[:item_per_page]:
+        await message.add_reaction(emoji)
+
+    def check(reaction, user):
+        return (
+            user == ctx.author
+            and str(reaction.emoji) in navigation_emojis + numbered_emojis[:item_per_page]
+            and reaction.message.id == message.id
+        )
+
+    while True:
+        try:
+            reaction, user = await client.wait_for("reaction_add", timeout=60.0, check=check)
+            emoji = str(reaction.emoji)
+
+            # Handle pagination and close shop
+            if emoji == "➡️" and current_page < total_pages - 1:
+                current_page += 1
+                await message.edit(embed=create_shop_embed(current_page))
+            elif emoji == "⬅️" and current_page > 0:
+                current_page -= 1
+                await message.edit(embed=create_shop_embed(current_page))
+            elif emoji == "❌":
+                close_shop_embed = discord.Embed(
+                    title="Shop closed.",
+                    description="You left the store. We'll see you soon!",
+                    color=discord.Color.red()
+                )
+                await message.edit(embed=close_shop_embed)
+                await message.clear_reactions()
+                break
+
+            # Handle item selection
+            elif emoji in numbered_emojis:
+                index = numbered_emojis.index(emoji)
+                item_index = current_page * item_per_page + index
+
+                if item_index < len(shop_items):
+                    item = shop_items[item_index]
+
+                    if character["coins"] >= item["buy_price"]:
+                        character["coins"] -= item["buy_price"]
+                        character["Inventory"] = add_to_inventory(character["Inventory"], item["item_name"], 1)
+                        save_characters(user_id, character)
+                        await ctx.send(f"✅ Purchased {item['item_name']} for {item['buy_price']} coins!")
+                    else:
+                        await ctx.send("❌ You don't have enough coins!")
+                else:
+                    await ctx.send("Invalid selection.")
+
+            # Remove the user's reaction to allow reuse
+            try:
+                await message.remove_reaction(emoji, user)
+            except discord.Forbidden:
+                await ctx.send("⚠️ Bot does not have permission to manage reactions!")
+                break
+            except discord.HTTPException as e:
+                await ctx.send(f"⚠️ Reaction removal failed: {e}")
+                break
+
+        except asyncio.TimeoutError:
+            await message.clear_reactions()
+            break
 
 @client.command()
 @cooldown(1, 5, BucketType.user)
