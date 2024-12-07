@@ -1187,3 +1187,4 @@ client.run(TOKEN)
 # Add something like artifacts/relics as a bones "stat" item for later on harder challenges
 # And lastly a better fighting system. Something like being able to "move" zones different areas in the zones with pictures to represent where you are
 # And giving it more of a dnd feel with quest and random popup events.
+#
