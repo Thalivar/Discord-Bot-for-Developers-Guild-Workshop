@@ -161,7 +161,6 @@ async def rps(ctx, choice: str):
 
 # Initialize the database
 def initialize_database():
-
     conn = sqlite3.connect('rpg_game.db')
     cursor = conn.cursor()
 
@@ -190,10 +189,23 @@ def initialize_database():
     )
     ''')
 
+    # Creates the equipment table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS equipment (
+        user_id TEXT PRIMARY KEY,
+        sword TEXT,
+        shield TEXT,
+        helmet TEXT,
+        chestplate TEXT,
+        pants TEXT,
+        boots TEXT,
+        FOREIGN KEY (user_id) REFERENCES characters (user_id)
+    )
+    ''')
+
     conn.commit()
     conn.close()
 
-# Call this to initialize the database
 initialize_database()
 
 @client.command() # Help message for the commands for the rpg game.
@@ -205,6 +217,8 @@ async def rpghelp(ctx):
     ".profile" - To check your profile
     ".fight" - To fight monsters for the guild
     ".rest" - To rest and recover your health at the guild inn
+    ".shop" - To buy items at the guild shop
+    ".equip (Item name)" - To equip your items and increase your stats
     """
 
     await ctx.send(rpghelp_message)
@@ -223,11 +237,8 @@ def is_user_in_database(user_id):
     return user_exists
 
 def load_character(user_id):
-
     try:
-
         with sqlite3.connect('rpg_game.db') as conn:
-
             cursor = conn.cursor()
 
             # Fetch character data
@@ -235,7 +246,6 @@ def load_character(user_id):
             character_row = cursor.fetchone()
 
             if not character_row:
-
                 return None
 
             # Convert character to dictionary
@@ -248,24 +258,35 @@ def load_character(user_id):
                 'Defense': character_row[6],
                 'Attack': character_row[7],
                 'XpToLevelUp': character_row[8],
-                'Inventory': {}
+                'Inventory': {},
+                'equipment': {}
             }
 
             # Fetch inventory items
             cursor.execute('SELECT item, COUNT(item) FROM inventory WHERE user_id = ? GROUP BY item', (user_id,))
             items = cursor.fetchall()
-
             character['Inventory'] = {item: count for item, count in items}
 
-            return character
-        
-    except sqlite3.Error as e:
+            # Fetch equipment
+            cursor.execute('SELECT sword, shield, helmet, chestplate, pants, boots FROM equipment WHERE user_id = ?', (user_id,))
+            equipment_row = cursor.fetchone()
+            if equipment_row:
+                character['equipment'] = {
+                    "sword": equipment_row[0],
+                    "shield": equipment_row[1],
+                    "helmet": equipment_row[2],
+                    "chestplate": equipment_row[3],
+                    "pants": equipment_row[4],
+                    "boots": equipment_row[5]
+                }
 
+            return character
+
+    except sqlite3.Error as e:
         print(f"Database error in load_character: {e}")
         return None
-    
-    except Exception as e:
 
+    except Exception as e:
         print(f"Unexpected error in load_character: {e}")
         return None
 
@@ -293,11 +314,8 @@ def reset_character(user_id):
         print(f"Unexpected error in reset_character: {e}")
 
 def save_characters(user_id, character):
-
     try:
-
         with sqlite3.connect('rpg_game.db') as conn:
-
             cursor = conn.cursor()
 
             # Save character stats
@@ -320,31 +338,38 @@ def save_characters(user_id, character):
             cursor.execute('DELETE FROM inventory WHERE user_id = ?', (user_id,))
 
             if isinstance(character['Inventory'], dict):
-
                 for item, quantity in character['Inventory'].items():
-
                     for _ in range(quantity):
-
                         cursor.execute('INSERT INTO inventory (user_id, item) VALUES (?, ?)', (user_id, item))
 
             elif isinstance(character['Inventory'], list):
-
                 for item in character['Inventory']:
-
                     cursor.execute('INSERT INTO inventory (user_id, item) VALUES (?, ?)', (user_id, item))
+
+            # Update equipment
+            if "equipment" in character:
+                cursor.execute('''
+                INSERT OR REPLACE INTO equipment (user_id, sword, shield, helmet, chestplate, pants, boots)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    user_id,
+                    character["equipment"].get("sword"),
+                    character["equipment"].get("shield"),
+                    character["equipment"].get("helmet"),
+                    character["equipment"].get("chestplate"),
+                    character["equipment"].get("pants"),
+                    character["equipment"].get("boots")
+                ))
 
             conn.commit()
 
     except sqlite3.Error as e:
-
         print(f"Database error in save_characters: {e}")
 
     except Exception as e:
-
         print(f"Unexpected error in save_characters: {e}")
 
 def create_character(user_id, custom_name):
-
     # The base character preset data
     character = {
         'Name': custom_name,
@@ -354,8 +379,16 @@ def create_character(user_id, custom_name):
         'MaxHealth': 100,
         'Defense': 10,
         'Attack': 5,
-        'Inventory': [],
-        'XpToLevelUp': 100
+        'Inventory': {},
+        'XpToLevelUp': 100,
+        'equipment': {  
+            'sword': None,
+            'shield': None,
+            'helmet': None,
+            'chestplate': None,
+            'pants': None,
+            'boots': None
+        }
     }
 
     # Save the character to the database
@@ -414,22 +447,22 @@ def get_shop_items():
         {"item_name": "Mana Potion", "buy_price": 1, "sell_price": 10, "type": "consumable", "effect": {"heal": 50}, "description": "Restores 50 mana when the potion is consumed."},
         {"item_name": "Big Health Potion", "buy_price": 1, "sell_price": 10, "type": "consumable", "effect": {"heal": 50}, "description": "Restores 200 health when the potion is consumed."},
         {"item_name": "Big Mana Potion", "buy_price": 1, "sell_price": 10, "type": "consumable", "effect": {"heal": 50}, "description": "Restores 200 mana when the potion is consumed."},
-        {"item_name": "Wooden Sword", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Sword made out of wood to start fighting monsters."},
-        {"item_name": "Iron Sword", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Trusty upgrade from the wooden sword."},
-        {"item_name": "Wooden Shield", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "Everybody's trusty wooden shield to block those nasty bites."},
-        {"item_name": "Metal Shield", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The upgraded version of the wooden shield."},
-        {"item_name": "Leather Helmet", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The starter leather armor set."},
-        {"item_name": "Leather Vest", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The starter leather armor set."},
-        {"item_name": "Leather Pants", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The starter leather armor set."},
-        {"item_name": "Leather Boots", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The starter leather armor set."},
-        {"item_name": "Chainmail Helmet", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The next best armor set after leather."},
-        {"item_name": "Chainmail Vest", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The next best armor set after leather."},
-        {"item_name": "Chainmail Pants", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The next best armor set after leather."},
-        {"item_name": "Chainmail Boots", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The next best armor set after leather."},
-        {"item_name": "Iron Helmet", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The best buyable armor set there is."},
-        {"item_name": "Iron Vest", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The best buyable armor set there is."},
-        {"item_name": "Iron Pants", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The best buyable armor set there is."},
-        {"item_name": "Iron Boots", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"heal": 50}, "description": "The best buyable armor set there is."},
+        {"item_name": "Wooden Sword", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"Attack": 10}, "slot": "sword", "description": "Sword made out of wood to start fighting monsters."},
+        {"item_name": "Iron Sword", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"Attack": 20}, "slot": "sword", "description": "Trusty upgrade from the wooden sword."},
+        {"item_name": "Wooden Shield", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"Defense": 5}, "slot": "shield", "description": "Everybody's trusty wooden shield to block those nasty bites."},
+        {"item_name": "Metal Shield", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"Defense": 10}, "slot": "shield", "description": "The upgraded version of the wooden shield."},
+        {"item_name": "Leather Helmet", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"MaxHealth": 50, "Defense": 5}, "slot": "helmet", "description": "The starter leather armor set."},
+        {"item_name": "Leather Vest", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"MaxHealth": 50, "Defense": 5}, "slot": "chestplate", "description": "The starter leather armor set."},
+        {"item_name": "Leather Pants", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"MaxHealth": 50, "Defense": 5}, "slot": "pants", "description": "The starter leather armor set."},
+        {"item_name": "Leather Boots", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"MaxHealth": 50, "Defense": 5}, "slot": "boots", "description": "The starter leather armor set."},
+        {"item_name": "Chainmail Helmet", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"MaxHealth": 50, "Defense": 5}, "slot": "helmet", "description": "The next best armor set after leather."},
+        {"item_name": "Chainmail Vest", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"MaxHealth": 50, "Defense": 5}, "slot": "chestplate", "description": "The next best armor set after leather."},
+        {"item_name": "Chainmail Pants", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"MaxHealth": 50, "Defense": 5}, "slot": "pants", "description": "The next best armor set after leather."},
+        {"item_name": "Chainmail Boots", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"MaxHealth": 50, "Defense": 5}, "slot": "boots",  "description": "The next best armor set after leather."},
+        {"item_name": "Iron Helmet", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"MaxHealth": 50, "Defense": 5}, "slot": "helmet", "description": "The best buyable armor set there is."},
+        {"item_name": "Iron Vest", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"MaxHealth": 50, "Defense": 5}, "slot": "chestplate", "description": "The best buyable armor set there is."},
+        {"item_name": "Iron Pants", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"MaxHealth": 50, "Defense": 5}, "slot": "pants", "description": "The best buyable armor set there is."},
+        {"item_name": "Iron Boots", "buy_price": 1, "sell_price": 10, "type": "equipment", "effect": {"MaxHealth": 50, "Defense": 5}, "slot": "boots", "description": "The best buyable armor set there is."},
     ]
 
 def get_craftable_items():
@@ -443,58 +476,53 @@ def get_craftable_items():
         {"item_name": "Venomcrest Helm", "materials": {"Carrot": 1, "Bunny Fur": 1}, "type": "equipment", "effect": {"health": 300}, "description": "Restores 50 health when the potion is consumed."}
     ]
 
-def Level_up(user_id):
+def Level_up(character):
 
-    # Sets character to load_character(user_id)
-    character = load_character(user_id)
-
-    # Incase user is not in the database doesnt return anything
-    if not character:
-
-        return False
-
-    # Apply level-up changes
+    # Increment level
     character['Level'] += 1
-    character['Attack'] += 2
+    character['XpToLevelUp'] = int(character['XpToLevelUp'] * 1.2)  # Increase XP for the next level
+
+    # Base stat increases
     character['MaxHealth'] += 20
+    character['Attack'] += 2
     character['Defense'] += 1
-    character['XpToLevelUp'] = int(character['XpToLevelUp'] * 1.2)  # Increase XP for next level
-    character['Health'] = character['MaxHealth']  # Restore health
 
-    # Save changes
-    save_characters(user_id, character)
+    # Restore health to max
+    character['Health'] = character['MaxHealth']
 
-    print(f"New stats: Level {character['Level']}, Attack {character['Attack']}, MaxHealth {character['MaxHealth']}, Defense {character['Defense']}, Next XPToLevelUp: {character['XpToLevelUp']}")
-
-    return True
+    print(f"DEBUG: Level-up applied. New stats: {character}")
 
 def Check_Level_Up(user_id):
-
+    
+    # Load character from the database
     character = load_character(user_id)
 
     if not character:
-
+        print(f"DEBUG: User {user_id} is not in the database.")
         return None
 
     leveled_up = False
 
+    # Process level-ups while XP exceeds the threshold
     while character['Xp'] >= character['XpToLevelUp']:
-        # Deduct XP required for level-up
+        print(f"DEBUG: User {user_id} XP ({character['Xp']}) >= XPToLevelUp ({character['XpToLevelUp']})")
+
+        # Deduct the XP for the current level-up
         character['Xp'] -= character['XpToLevelUp']
 
-        # Apply level-up changes
-        character['Level'] += 1
-        character['Attack'] += 2
-        character['MaxHealth'] += 20
-        character['Defense'] += 1
-        character['XpToLevelUp'] = int(character['XpToLevelUp'] * 1.2)  # Increase XP for next level
-        character['Health'] = character['MaxHealth']  # Restore health
+        # Apply a single level-up
+        Level_up(character)
+
+        # Set flag for successful level-up
         leveled_up = True
 
-    # Save the updated character
+        # After leveling up, ensure remaining XP is validated against the new XP threshold
+        if character['Xp'] < 0:
+            character['Xp'] = 0  # Safety check to prevent negative XP
+
+    # Save the updated character to the database
     save_characters(user_id, character)
 
-    print(f"Level-up complete. New stats: {character}")
     return character if leveled_up else None
 
 def Generate_Loot(loot_table):
@@ -548,12 +576,9 @@ def add_to_inventory(inventory, item_name, quantity):
     return inventory  # Always return the updated inventory
 
 async def battle(ctx, user_id, area):
-
-    user_id = str(ctx.author.id)
     character = load_character(user_id)
 
     if not character:
-
         await ctx.send("You need to join the guild first! Use `.start` to create your character.")
         return
 
@@ -561,7 +586,6 @@ async def battle(ctx, user_id, area):
     monster = Spawn_Monster(area)
 
     if not monster:
-
         await ctx.send(f"No monsters found in the {area}. Try exploring somewhere else!")
         return
 
@@ -583,58 +607,51 @@ async def battle(ctx, user_id, area):
         # Update embed with new stats
         battle_embed.clear_fields()
         battle_embed.add_field(name=f"{character['Name']} attacks!", value=f"Dealt {damage_to_monster} damage. Monster HP: {max(monster['Health'], 0)}")
-        battle_embed.add_field(name=f"{monster['Name']} attacks!", value=f"Dealt {damage_to_player} damage. Your HP: {character['Health']}/{character['MaxHealth']}")
+        battle_embed.add_field(name=f"{monster['Name']} attacks!", value=f"Dealt {damage_to_player} damage. Your HP: {character['Health']} / {character['MaxHealth']}")
         await message.edit(embed=battle_embed)
         await asyncio.sleep(1)  # Dramatic pause
 
-        if monster['Health'] <= 0:
+        if monster['Health'] <= 0 or character['Health'] <= 0:
             break
 
-        if character['Health'] <= 0:
-            break
-
-    # Post-battle rewards or defeat screen
+    # Post-battle outcomes
     if character['Health'] > 0:
-        # Monster defeated
-        character['Xp'] += monster['XpReward']
+        # Player wins
+        character['Xp'] += monster['XpReward']  # Award XP
+        print(f"DEBUG: XP after battle: {character['Xp']}")
 
-        # Check for level-up and update character
-        updated_character = Check_Level_Up(user_id)
+        # Level-up check and updates
+        updated_character = Check_Level_Up(user_id)  # Check for level-up
         if updated_character:
+            character = updated_character  # Replace with leveled-up character
 
-            character = updated_character  # Use the updated character stats
-
-        # Rewards embed
-        rewards_embed = discord.Embed(title=f"Victory! {character['Name']} defeated {monster['Name']}", color=discord.Color.green())
-        rewards_embed.add_field(name="XP Gained", value=f"{monster['XpReward']}", inline=False)
-
-        if updated_character:
-
-            rewards_embed.add_field(name="Level Up!", value=f"Level {character['Level']} achieved!", inline=False)
-
-        # Loot generation
-        if 'LootTable' in monster and monster['LootTable']:
-
+        # Generate loot
+        loot_message = "No loot dropped."
+        if 'LootTable' in monster:
             loot = Generate_Loot(monster['LootTable'])
-
             if loot:
-
                 loot_message = "\n".join([f"- {item}: x{quantity}" for item, quantity in loot])
-                rewards_embed.add_field(name="Loot Collected", value=loot_message, inline=False)
-
                 for item, quantity in loot:
-
                     character['Inventory'] = add_to_inventory(character['Inventory'], item, quantity)
-        else:
 
-            rewards_embed.add_field(name="Loot Collected", value="No loot dropped.", inline=False)
+        # Create victory embed
+        rewards_embed = discord.Embed(
+            title=f"Victory! {character['Name']} defeated {monster['Name']}",
+            color=discord.Color.green()
+        )
+        rewards_embed.add_field(name="XP Gained", value=f"{monster['XpReward']}", inline=False)
+        if updated_character:
+            rewards_embed.add_field(name="Level Up!", value=f"Level {character['Level']} achieved!", inline=False)
+        rewards_embed.add_field(name="Loot Collected", value=loot_message, inline=False)
 
-        # Replace the battle embed with the rewards embed
         await message.edit(embed=rewards_embed)
 
     else:
         # Player defeated
-        defeat_embed = discord.Embed(title=f"Defeat... {character['Name']} was defeated by {monster['Name']}", color=discord.Color.dark_red())
+        defeat_embed = discord.Embed(
+            title=f"Defeat... {character['Name']} was defeated by {monster['Name']}",
+            color=discord.Color.dark_red()
+        )
         defeat_embed.add_field(name="Tip", value="Rest at the guild to recover and try again.")
         await message.edit(embed=defeat_embed)
 
@@ -755,6 +772,16 @@ async def profile(ctx):
     rows = [inventory_items[i:i + items_per_row] for i in range(0, len(inventory_items), items_per_row)]
     formatted_inventory = "\n".join([",   ".join(row) for row in rows])
 
+    equiped_items = [
+        f"🗡️ Sword: {character['equipment']['sword'] or 'None'}",
+        f"🛡️ Shield: {character['equipment']['shield'] or 'None'}",
+        f"🎩 Helmet: {character['equipment']['helmet'] or 'None'}",
+        f"👕 Chestplate: {character['equipment']['chestplate'] or 'None'}",
+        f"👖 Pant: {character['equipment']['pants'] or 'None'}",
+        f"👢 Boots: {character['equipment']['boots'] or 'None'}"
+    ]
+    formatted_equipment = " / ".join(equiped_items)
+
     # Create embed for the profile
     profile_embed = discord.Embed(
         title=f"Profile of {character['Name']}",
@@ -767,6 +794,8 @@ async def profile(ctx):
     profile_embed.add_field(name="🛡️ Defense", value=character['Defense'], inline=True)
     profile_embed.add_field(name="⚔️ Attack", value=character['Attack'], inline=True)
     profile_embed.add_field(name="💰 Coins", value=f"{character['coins']} coins", inline=True)
+
+    profile_embed.add_field(name="🛠️ Equipment" , value=formatted_equipment, inline = False)
 
     # Add inventory fields
     if inventory_items:
@@ -781,8 +810,113 @@ async def profile(ctx):
 
 @client.command()
 @cooldown(1, 5, BucketType.user)
-async def equip(ctx):
+async def equip(ctx, *item_name: str):
+    item_name = " ".join(item_name).strip()  # Handle multi-word inputs
     user_id = str(ctx.author.id)
+
+    if not is_user_in_database(user_id):
+        embed = discord.Embed(
+            title="Not a member",
+            description="You are not a member of the guild. Enroll in the guild with '.start'.",
+            color=discord.Color.orange()
+        )
+        await ctx.send(embed=embed)
+        return
+
+    character = load_character(user_id)
+
+    if "equipment" not in character:
+        character["equipment"] = {
+            "sword": None,
+            "shield": None,
+            "helmet": None,
+            "chestplate": None,
+            "pants": None,
+            "boots": None
+        }
+
+    inventory = character.get("Inventory", {})
+    normalized_inventory = {item.lower().strip(): item for item in inventory.keys()}
+    normalized_item_name = item_name.lower()
+
+    if normalized_item_name not in normalized_inventory:
+        embed = discord.Embed(
+            title="Item not found.",
+            description=f"❌ You do not have **{item_name}** in your inventory!",
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+        return
+
+    actual_item_name = normalized_inventory[normalized_item_name]
+    shop_items = get_shop_items()
+    item = next((i for i in shop_items if i["item_name"].lower() == normalized_item_name), None)
+
+    if not item or item["type"].lower() != "equipment":
+        embed = discord.Embed(
+            title="Invalid item.",
+            description=f"❌ **{item_name}** is not a valid equipment item.",
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+        return
+
+    slot = item.get("slot")
+    if slot not in character["equipment"]:
+        embed = discord.Embed(
+            title="Invalid slot.",
+            description=f"❌ {actual_item_name} cannot be equipped.",
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+        return
+
+    embed = discord.Embed(
+        title=f"Equipping {actual_item_name}",
+        color=discord.Color.blue()
+    )
+
+    # Unequip current item in the slot
+    current_item = character["equipment"][slot]
+    if current_item:
+        character["Inventory"][current_item] = character["Inventory"].get(current_item, 0) + 1
+        embed.add_field(
+            name="Unequipped item",
+            value=f"{current_item} was unequipped from the {slot} slot.",
+            inline=False
+        )
+
+        # Reverse stat effects
+        unequipped_item = next((i for i in shop_items if i["item_name"] == current_item), None)
+        if unequipped_item and "effect" in unequipped_item:
+            for stat, value in unequipped_item["effect"].items():
+                print(f"DEBUG: Subtracting {value} from {stat}")
+                character[stat] = max(0, character.get(stat, 0) - value)
+
+    # Equip the new item and apply effects
+    character["equipment"][slot] = actual_item_name
+    character["Inventory"][actual_item_name] -= 1
+    if character["Inventory"][actual_item_name] == 0:
+        del character["Inventory"][actual_item_name]
+
+    if "effect" in item:
+        for stat, value in item["effect"].items():
+            print(f"DEBUG: Adding {value} to {stat}")
+            character[stat] = character.get(stat, 0) + value
+
+    embed.add_field(
+        name="Equipped Item",
+        value=f"✅ {actual_item_name} has been equipped in the {slot} slot.",
+        inline=False
+    )
+    embed.add_field(
+        name="Updated Stats",
+        value=f"⚔️ Attack: {character.get('Attack', 0)}\n🛡️ Defense: {character.get('Defense', 0)}\n❤️ Health: {character.get('Health', 100)} / {character.get('MaxHealth', 100)}",
+        inline=False
+    )
+
+    save_characters(user_id, character)
+    await ctx.send(embed=embed)
 
 @client.command()
 @cooldown(1, 5, BucketType.user)  # 1 use per 5 seconds
@@ -860,29 +994,24 @@ async def fight(ctx, area: str):
 
     if not is_user_in_database(user_id):
         embed = discord.Embed(
-            title = "Not a member.",
-            description = "You aren't a member of the guild yet adventurer. Join with '.start'.",
-            color = discord.Color.orange()
+            title="Not a member.",
+            description="You aren't a member of the guild yet adventurer. Join with '.start'.",
+            color=discord.Color.orange()
         )
-        await ctx.send(embed = embed)
+        await ctx.send(embed=embed)
         return
 
     character = load_character(user_id)
     monster = Spawn_Monster(area)
 
     if not monster:
-
         await ctx.send("Somebody already took all the bounty's for this area. Please try another one.")
         return
 
-    print(f"Character: {character['Name']} - Monster: {monster['Name']}")  # Debugging
+    print(f"DEBUG: Character: {character['Name']} - Monster: {monster['Name']}")  # Debugging
 
-    result = await battle(ctx, user_id, area)  # Pass the `ctx` to allow messaging
-    await ctx.send(result)
-
-    if Check_Level_Up(user_id):
-
-        await ctx.send(f"Congratulations {character['Name']}! You have leveled up!")
+    # Call battle and handle results
+    await battle(ctx, user_id, area)
 
 @client.command()
 @cooldown(1, 5, BucketType.user)
