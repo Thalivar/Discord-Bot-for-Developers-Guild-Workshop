@@ -148,16 +148,9 @@ async def rps(ctx, choice: str):
     else: # Else outputs this:
         await ctx.send(f"You chose {choice}, I chose {bot_choice}. You lose!")
 
-# =============================================================
-# IDEA: Dungeon crawler/ RPG System mini game
-# =============================================================
-#For the rpg system after everything is ready.
-# Rework how the messages looks. 
-# Use avatars emojis or pictures for the users monsters and maybe areas aswell.
-# Get images for the loot drops and items
-# Get things like healing potions/ "Buff" potions to increase attack/ defense and health above the normal limit
-# Maybe try to add something like magic
-# Try to add a pet system/ classes for hunter pets
+##############
+# RPG SYSTEM #
+##############
 
 # Initialize the database
 def initialize_database():
@@ -493,7 +486,6 @@ def Level_up(character):
     print(f"DEBUG: Level-up applied. New stats: {character}")
 
 def Check_Level_Up(user_id):
-    
     # Load character from the database
     character = load_character(user_id)
 
@@ -1178,13 +1170,20 @@ async def resetdata(ctx):
     except asyncio.TimeoutError:
         await ctx.send("You took too long to decide. Reset canceled.")
 
-
-######################################
-# Make monsters drop loot each different in value
-# Make loot drops like items that the user can use
-# Maybe something like a dungeon later on with a endgame boss
-# Make a shop and a crafting system
-# Change up the Ui with how everything is getting output
-# 
-
 client.run(TOKEN)
+
+#######################
+#Future notes for self#
+#######################
+
+# As i might not have time to add all my current ideas intime before the workshop ends and with upcomming finals.
+# Here are the current ideas i have rn for the bot to be worked on later on.
+# 
+# Add a crafting, sell system into the game.
+# Add a "Endgame" tower/raid system.
+# And custom icons for the monsters/items, with someway that users can create/select custom characters
+# A class sytem. Warrior, Hunter/Archer, Wizard/Mage, Rogue/Assasin. With subclasses like Berserker, Necromancer ect
+# With classes like hunter/necromancer maybe a pet system to give each subclass a more unique feel
+# Add something like artifacts/relics as a bones "stat" item for later on harder challenges
+# And lastly a better fighting system. Something like being able to "move" zones different areas in the zones with pictures to represent where you are
+# And giving it more of a dnd feel with quest and random popup events.
