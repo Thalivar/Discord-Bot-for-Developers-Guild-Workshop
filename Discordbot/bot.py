@@ -216,6 +216,10 @@ async def rpghelp(ctx):
     ".rest" - To rest and recover your health at the guild inn
     ".shop" - To buy items at the guild shop
     ".equip (Item name)" - To equip your items and increase your stats
+
+    Commands for testing:
+    ".resetdata" - To reset your data
+    ".testlevelup" - To increase your level
     """
 
     await ctx.send(rpghelp_message)
@@ -1096,7 +1100,6 @@ async def shop(ctx):
             break
 
 @client.command()
-@cooldown(1, 5, BucketType.user)
 async def testlevelup(ctx):
     user_id = str(ctx.author.id)
 
@@ -1116,7 +1119,6 @@ async def testlevelup(ctx):
         await ctx.send("Level-up failed.")
 
 @client.command()
-@cooldown(1, 5, BucketType.user)
 async def resetdata(ctx):
     user_id = str(ctx.author.id)
 
