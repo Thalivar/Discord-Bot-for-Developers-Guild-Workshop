@@ -157,7 +157,7 @@ def initialize_database():
     conn = sqlite3.connect('rpg_game.db')
     cursor = conn.cursor()
 
-    # Creates the characters table
+    # Create the characters table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS characters (
         user_id TEXT PRIMARY KEY,
@@ -172,7 +172,12 @@ def initialize_database():
     )
     ''')
 
-    # Creates the inventory table
+    cursor.execute("PRAGMA table_info(characters);")
+    columns = [column[1] for column in cursor.fetchall()]
+    if "coins" not in columns:
+        print("DEBUG: Adding 'coins' column to the characters table.")
+        cursor.execute('ALTER TABLE characters ADD COLUMN coins INTEGER DEFAULT 100')
+
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS inventory (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -182,7 +187,6 @@ def initialize_database():
     )
     ''')
 
-    # Creates the equipment table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS equipment (
         user_id TEXT PRIMARY KEY,
@@ -198,6 +202,7 @@ def initialize_database():
 
     conn.commit()
     conn.close()
+    print("DEBUG: Database initialized successfully!")
 
 initialize_database()
 
@@ -217,29 +222,43 @@ async def rpghelp(ctx):
     await ctx.send(rpghelp_message)
 
 def is_user_in_database(user_id):
+    try:
+        conn = sqlite3.connect('rpg_game.db')
+        cursor = conn.cursor()
 
-    # Connects with the database (rpg_game.db)
-    conn = sqlite3.connect('rpg_game.db')
-    cursor = conn.cursor()
+        # Query the database for the user ID
+        cursor.execute('SELECT 1 FROM characters WHERE user_id = ? LIMIT 1', (user_id,))
+        user_exists = cursor.fetchone() is not None
 
-    # Query the database for the user ID
-    cursor.execute('SELECT 1 FROM characters WHERE user_id = ? LIMIT 1', (user_id,))
-    user_exists = cursor.fetchone() is not None  # Returns True if a row exists
+        conn.close()
+        print(f"DEBUG: User {user_id} exists: {user_exists}")  # Debugging
+        return user_exists
 
-    conn.close()
-    return user_exists
+    except sqlite3.Error as e:
+        print(f"Database error in is_user_in_database: {e}")
+        return False
+    except Exception as e:
+        print(f"Unexpected error in is_user_in_database: {e}")
+        return False
 
 def load_character(user_id):
     try:
         with sqlite3.connect('rpg_game.db') as conn:
             cursor = conn.cursor()
 
+            # Log fetching attempt
+            print(f"DEBUG: Fetching character for user_id={user_id}")
+
             # Fetch character data
             cursor.execute('SELECT * FROM characters WHERE user_id = ?', (user_id,))
             character_row = cursor.fetchone()
 
             if not character_row:
+                print(f"DEBUG: No character found for user_id={user_id}")
                 return None
+
+            # Log loaded character data
+            print(f"DEBUG: Loaded character row: {character_row}")
 
             # Convert character to dictionary
             character = {
@@ -251,6 +270,7 @@ def load_character(user_id):
                 'Defense': character_row[6],
                 'Attack': character_row[7],
                 'XpToLevelUp': character_row[8],
+                'coins': character_row[9],
                 'Inventory': {},
                 'equipment': {}
             }
@@ -273,12 +293,13 @@ def load_character(user_id):
                     "boots": equipment_row[5]
                 }
 
+            # Log the final loaded character
+            print(f"DEBUG: Final loaded character: {character}")
             return character
 
     except sqlite3.Error as e:
         print(f"Database error in load_character: {e}")
         return None
-
     except Exception as e:
         print(f"Unexpected error in load_character: {e}")
         return None
@@ -311,10 +332,13 @@ def save_characters(user_id, character):
         with sqlite3.connect('rpg_game.db') as conn:
             cursor = conn.cursor()
 
-            # Save character stats
+            # Log character details being saved
+            print(f"DEBUG: Saving character: {character}")
+
+            # Save character stats including coins
             cursor.execute('''
-            INSERT OR REPLACE INTO characters (user_id, name, level, xp, health, max_health, defense, attack, xp_to_level_up)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO characters (user_id, name, level, xp, health, max_health, defense, attack, xp_to_level_up, coins)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 user_id,
                 character['Name'],
@@ -324,46 +348,19 @@ def save_characters(user_id, character):
                 character['MaxHealth'],
                 character['Defense'],
                 character['Attack'],
-                character['XpToLevelUp']
+                character['XpToLevelUp'],
+                character['coins']
             ))
 
-            # Update inventory
-            cursor.execute('DELETE FROM inventory WHERE user_id = ?', (user_id,))
-
-            if isinstance(character['Inventory'], dict):
-                for item, quantity in character['Inventory'].items():
-                    for _ in range(quantity):
-                        cursor.execute('INSERT INTO inventory (user_id, item) VALUES (?, ?)', (user_id, item))
-
-            elif isinstance(character['Inventory'], list):
-                for item in character['Inventory']:
-                    cursor.execute('INSERT INTO inventory (user_id, item) VALUES (?, ?)', (user_id, item))
-
-            # Update equipment
-            if "equipment" in character:
-                cursor.execute('''
-                INSERT OR REPLACE INTO equipment (user_id, sword, shield, helmet, chestplate, pants, boots)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    user_id,
-                    character["equipment"].get("sword"),
-                    character["equipment"].get("shield"),
-                    character["equipment"].get("helmet"),
-                    character["equipment"].get("chestplate"),
-                    character["equipment"].get("pants"),
-                    character["equipment"].get("boots")
-                ))
-
             conn.commit()
+            print(f"DEBUG: Character saved for user_id={user_id}")
 
     except sqlite3.Error as e:
         print(f"Database error in save_characters: {e}")
-
     except Exception as e:
         print(f"Unexpected error in save_characters: {e}")
 
 def create_character(user_id, custom_name):
-    # The base character preset data
     character = {
         'Name': custom_name,
         'Level': 1,
@@ -372,9 +369,10 @@ def create_character(user_id, custom_name):
         'MaxHealth': 100,
         'Defense': 10,
         'Attack': 5,
-        'Inventory': {},
         'XpToLevelUp': 100,
-        'equipment': {  
+        'coins': 100, 
+        'Inventory': {},
+        'equipment': {
             'sword': None,
             'shield': None,
             'helmet': None,
@@ -386,8 +384,6 @@ def create_character(user_id, custom_name):
 
     # Save the character to the database
     save_characters(user_id, character)
-
-    # Debugging
     print(f"Character created for user_id={user_id}: {character}")
 
 def take_damage(user_id, damage): # A define to be called later on when the users sends his character to fight something
@@ -464,7 +460,7 @@ def get_craftable_items():
         {"item_name": "Fenrin's Edge", "materials": {"Carrot": 1, "Bunny Fur": 1}, "type": "equipment", "effect": {"attack": 25}, "description": "Restores 50 health when the potion is consumed."},
         {"item_name": "Gostir's Plate", "materials": {"Carrot": 1, "Bunny Fur": 1}, "type": "equipment", "effect": {"health": 150}, "description": "Restores 50 health when the potion is consumed."},
         {"item_name": "Fenrin's Inferno", "materials": {"Carrot": 1, "Bunny Fur": 1}, "type": "equipment", "effect": {"attack": 50}, "description": "Restores 50 health when the potion is consumed."},
-        {"item_name": "Eternal Shroud", "materials": {"Carrot": 1, "Bunny Fur": 1}, "type": "equipment", "effect": {"health":2050}, "description": "Restores 50 health when the potion is consumed."},
+        {"item_name": "Eternal Shroud", "materials": {"Carrot": 1, "Bunny Fur": 1}, "type": "equipment", "effect": {"health":250}, "description": "Restores 50 health when the potion is consumed."},
         {"item_name": "Dragonwoven Shroud", "materials": {"Carrot": 1, "Bunny Fur": 1}, "type": "equipment", "effect": {"health": 250}, "description": "Restores 50 health when the potion is consumed."},
         {"item_name": "Venomcrest Helm", "materials": {"Carrot": 1, "Bunny Fur": 1}, "type": "equipment", "effect": {"health": 300}, "description": "Restores 50 health when the potion is consumed."}
     ]
@@ -1021,9 +1017,8 @@ async def shop(ctx):
 
     character = load_character(user_id)
 
-    # Ensure the character has 'coins' initialized
     if "coins" not in character:
-        character["coins"] = 100  # Default starting coins
+        character["coins"] = 100
         save_characters(user_id, character)
 
     shop_items = get_shop_items()
@@ -1059,7 +1054,6 @@ async def shop(ctx):
     shop_embed = create_shop_embed(current_page)
     message = await ctx.send(embed=shop_embed)
 
-    # Add reactions for navigation and selection
     for emoji in navigation_emojis + numbered_emojis[:item_per_page]:
         await message.add_reaction(emoji)
 
@@ -1075,7 +1069,6 @@ async def shop(ctx):
             reaction, user = await client.wait_for("reaction_add", timeout=60.0, check=check)
             emoji = str(reaction.emoji)
 
-            # Handle pagination and close shop
             if emoji == "➡️" and current_page < total_pages - 1:
                 current_page += 1
                 await message.edit(embed=create_shop_embed(current_page))
@@ -1091,8 +1084,6 @@ async def shop(ctx):
                 await message.edit(embed=close_shop_embed)
                 await message.clear_reactions()
                 break
-
-            # Handle item selection
             elif emoji in numbered_emojis:
                 index = numbered_emojis.index(emoji)
                 item_index = current_page * item_per_page + index
@@ -1107,18 +1098,8 @@ async def shop(ctx):
                         await ctx.send(f"✅ Purchased {item['item_name']} for {item['buy_price']} coins!")
                     else:
                         await ctx.send("❌ You don't have enough coins!")
-                else:
-                    await ctx.send("Invalid selection.")
 
-            # Remove the user's reaction to allow reuse
-            try:
                 await message.remove_reaction(emoji, user)
-            except discord.Forbidden:
-                await ctx.send("⚠️ Bot does not have permission to manage reactions!")
-                break
-            except discord.HTTPException as e:
-                await ctx.send(f"⚠️ Reaction removal failed: {e}")
-                break
 
         except asyncio.TimeoutError:
             await message.clear_reactions()
