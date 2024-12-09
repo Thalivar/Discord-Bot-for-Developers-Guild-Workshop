@@ -202,7 +202,6 @@ def initialize_database():
 
     conn.commit()
     conn.close()
-    print("DEBUG: Database initialized successfully!")
 
 initialize_database()
 
@@ -246,9 +245,6 @@ def load_character(user_id):
         with sqlite3.connect('rpg_game.db') as conn:
             cursor = conn.cursor()
 
-            # Log fetching attempt
-            print(f"DEBUG: Fetching character for user_id={user_id}")
-
             # Fetch character data
             cursor.execute('SELECT * FROM characters WHERE user_id = ?', (user_id,))
             character_row = cursor.fetchone()
@@ -257,8 +253,6 @@ def load_character(user_id):
                 print(f"DEBUG: No character found for user_id={user_id}")
                 return None
 
-            # Log loaded character data
-            print(f"DEBUG: Loaded character row: {character_row}")
 
             # Convert character to dictionary
             character = {
@@ -332,9 +326,6 @@ def save_characters(user_id, character):
         with sqlite3.connect('rpg_game.db') as conn:
             cursor = conn.cursor()
 
-            # Log character details being saved
-            print(f"DEBUG: Saving character: {character}")
-
             # Save character stats including coins
             cursor.execute('''
             INSERT OR REPLACE INTO characters (user_id, name, level, xp, health, max_health, defense, attack, xp_to_level_up, coins)
@@ -353,7 +344,6 @@ def save_characters(user_id, character):
             ))
 
             conn.commit()
-            print(f"DEBUG: Character saved for user_id={user_id}")
 
     except sqlite3.Error as e:
         print(f"Database error in save_characters: {e}")
