@@ -11,10 +11,6 @@ import json
 import sqlite3
 from discord.ext.commands import BucketType, cooldown # type: ignore
 
-#Main ideas
-#Connect it to git/github
-#Try to make daily changes on it
-
 load_dotenv()
 TOKEN: str = os.getenv("TOKEN") # Loads the token from the .enc file
 
@@ -154,7 +150,7 @@ async def rps(ctx, choice: str):
 
 # Initialize the database
 def initialize_database():
-    conn = sqlite3.connect('rpg_game.db')
+    conn = sqlite3.connect('Discordbot/rpg_game.db')
     cursor = conn.cursor()
 
     # Create the characters table
@@ -226,7 +222,7 @@ async def rpghelp(ctx):
 
 def is_user_in_database(user_id):
     try:
-        conn = sqlite3.connect('rpg_game.db')
+        conn = sqlite3.connect('Discordbot/rpg_game.db')
         cursor = conn.cursor()
 
         # Query the database for the user ID
@@ -246,7 +242,7 @@ def is_user_in_database(user_id):
 
 def load_character(user_id):
     try:
-        with sqlite3.connect('rpg_game.db') as conn:
+        with sqlite3.connect('Discordbot/rpg_game.db') as conn:
             cursor = conn.cursor()
 
             # Fetch character data
@@ -256,7 +252,6 @@ def load_character(user_id):
             if not character_row:
                 print(f"DEBUG: No character found for user_id={user_id}")
                 return None
-
 
             # Convert character to dictionary
             character = {
@@ -277,6 +272,7 @@ def load_character(user_id):
             cursor.execute('SELECT item, COUNT(item) FROM inventory WHERE user_id = ? GROUP BY item', (user_id,))
             items = cursor.fetchall()
             character['Inventory'] = {item: count for item, count in items}
+            print(f"DEBUG: Loaded inventory: {character['Inventory']}")  # Debugging
 
             # Fetch equipment
             cursor.execute('SELECT sword, shield, helmet, chestplate, pants, boots FROM equipment WHERE user_id = ?', (user_id,))
@@ -291,7 +287,7 @@ def load_character(user_id):
                     "boots": equipment_row[5]
                 }
 
-            # Log the final loaded character
+            # Debugging final character
             print(f"DEBUG: Final loaded character: {character}")
             return character
 
@@ -306,7 +302,7 @@ def reset_character(user_id):
 
     try:
 
-        with sqlite3.connect("rpg_game.db") as conn:
+        with sqlite3.connect("Discordbot/rpg_game.db") as conn:
 
             cursor = conn.cursor()
 
@@ -327,8 +323,11 @@ def reset_character(user_id):
 
 def save_characters(user_id, character):
     try:
-        with sqlite3.connect('rpg_game.db') as conn:
+        with sqlite3.connect('Discordbot/rpg_game.db') as conn:
             cursor = conn.cursor()
+
+            # Debugging character data before saving
+            print(f"DEBUG: Saving character data: {character}")
 
             # Save character stats including coins
             cursor.execute('''
@@ -347,7 +346,27 @@ def save_characters(user_id, character):
                 character['coins']
             ))
 
+            cursor.execute('DELETE FROM inventory WHERE user_id = ?', (user_id,))
+            for item, quantity in character['Inventory'].items():
+                print(f"DEBUG: Saving inventory item: {item} x{quantity}")  # Debugging
+                for _ in range(quantity):
+                    cursor.execute('INSERT INTO inventory (user_id, item) VALUES (?, ?)', (user_id, item))
+
+            cursor.execute('''
+            INSERT OR REPLACE INTO equipment (user_id, sword, shield, helmet, chestplate, pants, boots)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                user_id,
+                character["equipment"].get("sword"),
+                character["equipment"].get("shield"),
+                character["equipment"].get("helmet"),
+                character["equipment"].get("chestplate"),
+                character["equipment"].get("pants"),
+                character["equipment"].get("boots")
+            ))
+
             conn.commit()
+            print(f"DEBUG: Character saved successfully for user_id={user_id}")
 
     except sqlite3.Error as e:
         print(f"Database error in save_characters: {e}")
@@ -605,16 +624,19 @@ async def battle(ctx, user_id, area):
         # Level-up check and updates
         updated_character = Check_Level_Up(user_id)  # Check for level-up
         if updated_character:
+            print(f"DEBUG: Level Up! New Level: {updated_character['Level']}")
             character = updated_character  # Replace with leveled-up character
 
         # Generate loot
         loot_message = "No loot dropped."
         if 'LootTable' in monster:
             loot = Generate_Loot(monster['LootTable'])
+            print(f"DEBUG: Loot generated: {loot}")  # Debugging
             if loot:
                 loot_message = "\n".join([f"- {item}: x{quantity}" for item, quantity in loot])
                 for item, quantity in loot:
                     character['Inventory'] = add_to_inventory(character['Inventory'], item, quantity)
+                    print(f"DEBUG: Inventory after adding loot: {character['Inventory']}")  # Debugging
 
         # Create victory embed
         rewards_embed = discord.Embed(
@@ -638,6 +660,7 @@ async def battle(ctx, user_id, area):
         await message.edit(embed=defeat_embed)
 
     # Save character updates
+    print(f"DEBUG: Final character before saving: {character}")  # Debugging
     save_characters(user_id, character)
 
 def Spawn_Monster(area): 
@@ -1148,9 +1171,6 @@ client.run(TOKEN)
 #######################
 #Future notes for self#
 #######################
-
-# As i might not have time to add all my current ideas intime before the workshop ends and with upcomming finals.
-# Here are the current ideas i have rn for the bot to be worked on later on.
 # 
 # Add a crafting, sell system into the game.
 # Add a "Endgame" tower/raid system.
