@@ -478,53 +478,18 @@ def get_craftable_items():
         {"item_name": "Venomcrest Helm", "materials": {"Carrot": 1, "Bunny Fur": 1}, "type": "equipment", "effect": {"health": 300}, "description": "Restores 50 health when the potion is consumed."}
     ]
 
-def Level_up(character):
-
-    # Increment level
-    character['Level'] += 1
-    character['XpToLevelUp'] = int(character['XpToLevelUp'] * 1.2)  # Increase XP for the next level
-
-    # Base stat increases
-    character['MaxHealth'] += 20
-    character['Attack'] += 2
-    character['Defense'] += 1
-
-    # Restore health to max
-    character['Health'] = character['MaxHealth']
-
-    print(f"DEBUG: Level-up applied. New stats: {character}")
-
-def Check_Level_Up(user_id):
-    # Load character from the database
-    character = load_character(user_id)
-
-    if not character:
-        print(f"DEBUG: User {user_id} is not in the database.")
-        return None
-
+def apply_level_up(character):
     leveled_up = False
-
-    # Process level-ups while XP exceeds the threshold
     while character['Xp'] >= character['XpToLevelUp']:
-        print(f"DEBUG: User {user_id} XP ({character['Xp']}) >= XPToLevelUp ({character['XpToLevelUp']})")
-
-        # Deduct the XP for the current level-up
         character['Xp'] -= character['XpToLevelUp']
-
-        # Apply a single level-up
-        Level_up(character)
-
-        # Set flag for successful level-up
+        character['Level'] += 1
+        character['MaxHealth'] += 20
+        character['Attack'] += 2
+        character['Defense'] += 1
+        character['Heath'] = character['MaxHealth']
+        character['XpTpLevelUp'] = int(character['XpToLevelUp'] * 1.2)
         leveled_up = True
-
-        # After leveling up, ensure remaining XP is validated against the new XP threshold
-        if character['Xp'] < 0:
-            character['Xp'] = 0  # Safety check to prevent negative XP
-
-    # Save the updated character to the database
-    save_characters(user_id, character)
-
-    return character if leveled_up else None
+    return leveled_up
 
 def Generate_Loot(loot_table):
 
@@ -622,10 +587,7 @@ async def battle(ctx, user_id, area):
         print(f"DEBUG: XP after battle: {character['Xp']}")
 
         # Level-up check and updates
-        updated_character = Check_Level_Up(user_id)  # Check for level-up
-        if updated_character:
-            print(f"DEBUG: Level Up! New Level: {updated_character['Level']}")
-            character = updated_character  # Replace with leveled-up character
+        leveled_up = apply_level_up(character)  # Check for level-up
 
         # Generate loot
         loot_message = "No loot dropped."
@@ -644,7 +606,7 @@ async def battle(ctx, user_id, area):
             color=discord.Color.green()
         )
         rewards_embed.add_field(name="XP Gained", value=f"{monster['XpReward']}", inline=False)
-        if updated_character:
+        if leveled_up:
             rewards_embed.add_field(name="Level Up!", value=f"Level {character['Level']} achieved!", inline=False)
         rewards_embed.add_field(name="Loot Collected", value=loot_message, inline=False)
 
@@ -1131,15 +1093,20 @@ async def testlevelup(ctx):
         await ctx.send("You don't have a character. Use `.start` to create one.")
         return
 
-    # Give XP to trigger a level-up
     character['Xp'] = character['XpToLevelUp'] + 1
+
+    # Apply level-up
+    leveled_up = apply_level_up(character)
+
     save_characters(user_id, character)
 
-    if Check_Level_Up(user_id):
-        character = load_character(user_id)  # Reload to get updated state
-        await ctx.send(f"Level-up successful! {character['Name']} is now Level {character['Level']}. XP: {character['Xp']}, Next Level XP: {character['XpToLevelUp']}")
+    if leveled_up:
+        await ctx.send(
+            f"Level-up successful! {character['Name']} is now Level {character['Level']}.\n"
+            f"XP: {character['Xp']}, Next Level XP: {character['XpToLevelUp']}"
+        )
     else:
-        await ctx.send("Level-up failed.")
+        await ctx.send("Level-up failed or insufficient XP.")
 
 @client.command()
 async def resetdata(ctx):
