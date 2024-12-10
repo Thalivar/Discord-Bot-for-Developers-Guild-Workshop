@@ -250,7 +250,6 @@ def load_character(user_id):
             character_row = cursor.fetchone()
 
             if not character_row:
-                print(f"DEBUG: No character found for user_id={user_id}")
                 return None
 
             # Convert character to dictionary
@@ -272,7 +271,6 @@ def load_character(user_id):
             cursor.execute('SELECT item, COUNT(item) FROM inventory WHERE user_id = ? GROUP BY item', (user_id,))
             items = cursor.fetchall()
             character['Inventory'] = {item: count for item, count in items}
-            print(f"DEBUG: Loaded inventory: {character['Inventory']}")  # Debugging
 
             # Fetch equipment
             cursor.execute('SELECT sword, shield, helmet, chestplate, pants, boots FROM equipment WHERE user_id = ?', (user_id,))
@@ -286,9 +284,6 @@ def load_character(user_id):
                     "pants": equipment_row[4],
                     "boots": equipment_row[5]
                 }
-
-            # Debugging final character
-            print(f"DEBUG: Final loaded character: {character}")
             return character
 
     except sqlite3.Error as e:
@@ -306,11 +301,6 @@ def reset_character(user_id):
 
             cursor = conn.cursor()
 
-            # Delete character data
-            cursor.execute("DELETE FROM characters WHERE user_id = ?", (user_id,))
-            # Delete inventory data
-            cursor.execute("DELETE FROM inventory WHERE user_id = ?", (user_id,))
-
             conn.commit()
 
     except sqlite3.Error as e:
@@ -326,10 +316,6 @@ def save_characters(user_id, character):
         with sqlite3.connect('Discordbot/rpg_game.db') as conn:
             cursor = conn.cursor()
 
-            # Debugging character data before saving
-            print(f"DEBUG: Saving character data: {character}")
-
-            # Save character stats including coins
             cursor.execute('''
             INSERT OR REPLACE INTO characters (user_id, name, level, xp, health, max_health, defense, attack, xp_to_level_up, coins)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -348,7 +334,6 @@ def save_characters(user_id, character):
 
             cursor.execute('DELETE FROM inventory WHERE user_id = ?', (user_id,))
             for item, quantity in character['Inventory'].items():
-                print(f"DEBUG: Saving inventory item: {item} x{quantity}")  # Debugging
                 for _ in range(quantity):
                     cursor.execute('INSERT INTO inventory (user_id, item) VALUES (?, ?)', (user_id, item))
 
@@ -366,7 +351,6 @@ def save_characters(user_id, character):
             ))
 
             conn.commit()
-            print(f"DEBUG: Character saved successfully for user_id={user_id}")
 
     except sqlite3.Error as e:
         print(f"Database error in save_characters: {e}")
@@ -416,11 +400,11 @@ def get_monsters_for_area(area): # List of monsters and the areas they are in
 
     areas = {
         'Forest': [
-            {'Name': 'Bunny', 'Health': 20, 'Attack': 11, 'Defense': 1, 'XpReward': 10, 'Rarity': 'common', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 5), 'guaranteed': True}, 'Bunny Fur': {'chance': 10, 'quantity': 1, 'guaranteed': False}}},
-            {'Name': 'Wolf', 'Health': 20, 'Attack': 11, 'Defense': 2, 'XpReward': 20, 'Rarity': 'common', 'LootTable': {'Wolf Pelt': {'chance': 80, 'quantity': (1, 2), 'guaranteed': True}, 'Wolf Bone': {'chance': 20, 'quantity': 1, 'guaranteed': False}}},
-            {'Name': 'Boar', 'Health': 20, 'Attack': 15, 'Defense': 2, 'XpReward': 30, 'Rarity': 'uncommon', 'LootTable': {'Boar Pelt': {'chance': 70, 'quantity': (1, 3), 'guaranteed': True}, 'Tusk': {'chance': 30, 'quantity': 1, 'guaranteed': False}}},
-            {'Name': 'Treant', 'Health': 20, 'Attack': 11, 'Defense': 1, 'XpReward': 35, 'Rarity': 'rare', 'LootTable': {'Treant bark': {'chance': 70, 'quantity': (1, 5), 'guaranteed': True}, 'Treant Sap': {'chance': 29, 'quantity': (1, 3), 'guaranteed': False}, 'Treant Heart': {'chance': 1, 'quantity': 1, 'guaranteed': False}}},
-            {'Name': 'Wolf King', 'Health': 20, 'Attack': 20, 'Defense': 3, 'XpReward': 100, 'Rarity': 'legendary', 'LootTable': {'Wolf King Pelt': {'chance': 80, 'quantity': (1, 4), 'guaranteed': True}, 'Wolf King bone': {'chance': 19, 'quantity': 1, 'guaranteed': False}, 'Wolf Kings Essence': {'chance': 1, 'quantity': 1, 'guaranteed': False}}}
+            {'Name': 'Bunny', 'Health': 20, 'Attack': 11, 'Defense': 1, 'XpReward': 10, 'Rarity': 'common', 'LootTable': {'Carrot': {'chance': 90, 'quantity': (1, 5), 'guaranteed': True, 'sell price': 2}, 'Bunny Fur': {'chance': 10, 'quantity': 1, 'guaranteed': False, 'sell price': 5}}},
+            {'Name': 'Wolf', 'Health': 20, 'Attack': 11, 'Defense': 2, 'XpReward': 20, 'Rarity': 'common', 'LootTable': {'Wolf Pelt': {'chance': 80, 'quantity': (1, 2), 'guaranteed': True, 'sell price': 3}, 'Wolf Bone': {'chance': 20, 'quantity': 1, 'guaranteed': False, 'sell price': 5}}},
+            {'Name': 'Boar', 'Health': 20, 'Attack': 15, 'Defense': 2, 'XpReward': 30, 'Rarity': 'uncommon', 'LootTable': {'Boar Pelt': {'chance': 70, 'quantity': (1, 3), 'guaranteed': True, 'sell price': 3}, 'Tusk': {'chance': 30, 'quantity': 1, 'guaranteed': False, 'sell price': 6}}},
+            {'Name': 'Treant', 'Health': 20, 'Attack': 11, 'Defense': 1, 'XpReward': 35, 'Rarity': 'rare', 'LootTable': {'Treant bark': {'chance': 70, 'quantity': (1, 5), 'guaranteed': True, 'sell price': 5}, 'Treant Sap': {'chance': 29, 'quantity': (1, 3), 'guaranteed': False, 'sell price': 5}, 'Treant Heart': {'chance': 1, 'quantity': 1, 'guaranteed': False, 'sell price': 50}}},
+            {'Name': 'Wolf King', 'Health': 20, 'Attack': 20, 'Defense': 3, 'XpReward': 100, 'Rarity': 'legendary', 'LootTable': {'Wolf King Pelt': {'chance': 80, 'quantity': (1, 4), 'guaranteed': True, 'sell price': 6}, 'Wolf King bone': {'chance': 19, 'quantity': 1, 'guaranteed': False, 'sell price': 10}, 'Wolf Kings Essence': {'chance': 1, 'quantity': 1, 'guaranteed': False, 'sell price': 75}}}
         ],
         'Cave': [
             {'Name': 'Bat', 'Health': 80, 'Attack': 12, 'Defense': 5, 'XpReward': 50, 'Rarity': 'common', 'LootTable': {'Bat Wing': {'chance': 70, 'quantity': (1, 2), 'guaranteed': True}, 'Bat ear': {'chance': 30, 'quantity': (1, 2), 'guaranteed': False}}},
@@ -548,7 +532,6 @@ async def battle(ctx, user_id, area):
         await ctx.send("You need to join the guild first! Use `.start` to create your character.")
         return
 
-    # Spawn a monster for the area
     monster = Spawn_Monster(area)
 
     if not monster:
@@ -593,7 +576,6 @@ async def battle(ctx, user_id, area):
         loot_message = "No loot dropped."
         if 'LootTable' in monster:
             loot = Generate_Loot(monster['LootTable'])
-            print(f"DEBUG: Loot generated: {loot}")  # Debugging
             if loot:
                 loot_message = "\n".join([f"- {item}: x{quantity}" for item, quantity in loot])
                 for item, quantity in loot:
@@ -621,12 +603,10 @@ async def battle(ctx, user_id, area):
         defeat_embed.add_field(name="Tip", value="Rest at the guild to recover and try again.")
         await message.edit(embed=defeat_embed)
 
-    # Save character updates
-    print(f"DEBUG: Final character before saving: {character}")  # Debugging
     save_characters(user_id, character)
 
 def Spawn_Monster(area): 
-    # Balanced monster generation with corrected weighting
+
     monsters = get_monsters_for_area(area)
 
     if not monsters:
@@ -723,7 +703,7 @@ async def profile(ctx):
 
     # Ensure the character has coins initialized
     if "coins" not in character:
-        character["coins"] = 100  # Default starting coins
+        character["coins"] = 100
         save_characters(user_id, character)
 
     # XP progress bar
@@ -975,8 +955,6 @@ async def fight(ctx, area: str):
         await ctx.send("Somebody already took all the bounty's for this area. Please try another one.")
         return
 
-    print(f"DEBUG: Character: {character['Name']} - Monster: {monster['Name']}")  # Debugging
-
     # Call battle and handle results
     await battle(ctx, user_id, area)
 
@@ -1083,6 +1061,42 @@ async def shop(ctx):
         except asyncio.TimeoutError:
             await message.clear_reactions()
             break
+
+@client.comman()
+async def sell(ctx):
+    user_id = str(ctx.author.id)
+
+    if not is_user_in_database(user_id):
+        embed = discord.Embed(
+            title="Not a member.",
+            description="You aren't a member of the guild yet adventurer. Join with '.start'.",
+            color=discord.Color.orange()
+        )
+        await ctx.send(embed=embed)
+        return
+    
+    character = load_character(user_id)
+
+    inventory = character.get("Inventory", {})
+    if not inventory:
+        embed = discord.Embed(
+            title = "Inventory empty",
+            description = "Your inventory is empty you can't sell anything",
+            color = discord.Color.red()
+        )
+        await ctx.send(embed = embed)
+        return
+    
+    monsters = get_monsters_for_area("areas")
+    loot_table = {}
+    for area_monsters in monsters.value():
+        for monster in area_monsters:
+            if 'LootTable' in monster:
+                loot_table.update(monster['LootTable'])
+
+    shop_items = get_shop_items()
+    sellable_items = {item['item_name'].lower(): item for item in shop_items if 'sell_price' in item}
+    sellable_items.update({key.lower(): {'sell_price': value['sell_price']} for key, value in loot_table.items() if 'sell_price' in value})
 
 @client.command()
 async def testlevelup(ctx):
