@@ -1098,6 +1098,36 @@ async def sell(ctx):
     sellable_items = {item['item_name'].lower(): item for item in shop_items if 'sell_price' in item}
     sellable_items.update({key.lower(): {'sell_price': value['sell_price']} for key, value in loot_table.items() if 'sell_price' in value})
 
+    def create_shop_embed(page, item_per_page = 5):
+        items = list(inventory.keys())
+        start = page * item_per_page
+        end = page + item_per_page
+        emebd = discord.Embed(
+            title = "Sell items",
+            description = "Select an item you wish to sell by reaction to the corresponding emoji.",
+            colot = discord.Color.gold()
+        )
+
+        for idx, item_name in enumerate(items[start:end], start = 1):
+            sell_price = sellable_items.get(item_name.lower(), {}).get('sell_price')
+            quantity = inventory[item_name]
+            if sell_price:
+                emoji = f"{idx}\u20E3" # Nummber emojis
+                embed.add_field(
+                    name = f"{emoji} {item_name}",
+                    value = f"Quantity: {quantity} | Sell Price: {sell_price} coins each.",
+                    inline = False
+                )
+        
+        embed.set_footer(text = f"Page {page + 1}")
+        return embed, items[start:end]
+
+    current_page = 0
+    total_pages = (len(inventory) + 4) // 5
+    items_per_page = 5
+
+
+
 @client.command()
 async def testlevelup(ctx):
     user_id = str(ctx.author.id)
@@ -1162,3 +1192,20 @@ client.run(TOKEN)
 # And lastly a better fighting system. Something like being able to "move" zones different areas in the zones with pictures to represent where you are
 # And giving it more of a dnd feel with quest and random popup events.
 #
+# -----------------------------------------------------
+# Future API's that i can use to improve the bot:
+#------------------------------------------------------
+#
+# Open5e API for random monster generation.
+# OpenAI for generating unique item or character descriptions.
+#
+# For Immersive Experiences:
+# OpenWeatherMap to provide weather-based events or battle effects.
+#
+# For Economy Expansion:
+# 
+# Exchangerate.host to display prices in different currencies.
+# 
+# For Social Features:
+#
+# leaderboards using Firebase or MongoDB APIs
