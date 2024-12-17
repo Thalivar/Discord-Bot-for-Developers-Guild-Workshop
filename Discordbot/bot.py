@@ -234,10 +234,8 @@ def is_user_in_database(user_id):
         return user_exists
 
     except sqlite3.Error as e:
-        print(f"Database error in is_user_in_database: {e}")
         return False
     except Exception as e:
-        print(f"Unexpected error in is_user_in_database: {e}")
         return False
 
 def load_character(user_id):
@@ -287,10 +285,8 @@ def load_character(user_id):
             return character
 
     except sqlite3.Error as e:
-        print(f"Database error in load_character: {e}")
         return None
     except Exception as e:
-        print(f"Unexpected error in load_character: {e}")
         return None
 
 def reset_character(user_id):
@@ -1062,10 +1058,12 @@ async def shop(ctx):
             await message.clear_reactions()
             break
 
-@client.comman()
+@client.command()
+@cooldown(1, 5, BucketType.user)
 async def sell(ctx):
     user_id = str(ctx.author.id)
 
+    character = load_character(user_id)
     if not is_user_in_database(user_id):
         embed = discord.Embed(
             title="Not a member.",
@@ -1074,59 +1072,140 @@ async def sell(ctx):
         )
         await ctx.send(embed=embed)
         return
-    
-    character = load_character(user_id)
 
     inventory = character.get("Inventory", {})
+    print(f"DEBUG: Loaded Inventory: {inventory}")
     if not inventory:
         embed = discord.Embed(
-            title = "Inventory empty",
-            description = "Your inventory is empty you can't sell anything",
-            color = discord.Color.red()
+            title="No items",
+            description="You have no items in your inventory that you can sell.",
+            color=discord.Color.orange()
         )
-        await ctx.send(embed = embed)
+        await ctx.send(embed=embed)
         return
-    
-    monsters = get_monsters_for_area("areas")
+
+    # Combine sellable items from loot table and shop items
+    monsters = get_monsters_for_area("all_areas")
     loot_table = {}
-    for area_monsters in monsters.value():
+    for area_monsters in monsters.values():
         for monster in area_monsters:
             if 'LootTable' in monster:
                 loot_table.update(monster['LootTable'])
 
     shop_items = get_shop_items()
+    print(f"DEBUG: Sellable Items: {sellable_items}")
     sellable_items = {item['item_name'].lower(): item for item in shop_items if 'sell_price' in item}
     sellable_items.update({key.lower(): {'sell_price': value['sell_price']} for key, value in loot_table.items() if 'sell_price' in value})
 
-    def create_shop_embed(page, item_per_page = 5):
+    def create_sell_embed(page, item_per_page=5):
         items = list(inventory.keys())
         start = page * item_per_page
-        end = page + item_per_page
-        emebd = discord.Embed(
-            title = "Sell items",
-            description = "Select an item you wish to sell by reaction to the corresponding emoji.",
-            colot = discord.Color.gold()
+        end = start + item_per_page
+        embed = discord.Embed(
+            title="Sell Items",
+            description="Select an item to sell by reacting with the corresponding emoji.",
+            color=discord.Color.gold()
         )
 
-        for idx, item_name in enumerate(items[start:end], start = 1):
+        for idx, item_name in enumerate(items[start:end], start=1):
             sell_price = sellable_items.get(item_name.lower(), {}).get('sell_price')
             quantity = inventory[item_name]
             if sell_price:
-                emoji = f"{idx}\u20E3" # Nummber emojis
+                emoji = f"{idx}\u20E3"  # Number emoji
                 embed.add_field(
-                    name = f"{emoji} {item_name}",
-                    value = f"Quantity: {quantity} | Sell Price: {sell_price} coins each.",
-                    inline = False
+                    name=f"{emoji} {item_name}",
+                    value=f"Quantity: {quantity} | Sell Price: {sell_price} coins each",
+                    inline=False
                 )
-        
-        embed.set_footer(text = f"Page {page + 1}")
+
+        embed.set_footer(text=f"Page {page + 1}")
         return embed, items[start:end]
 
     current_page = 0
     total_pages = (len(inventory) + 4) // 5
-    items_per_page = 5
+    item_per_page = 5
 
+    sell_embed, current_items = create_sell_embed(current_page, item_per_page)
+    message = await ctx.send(embed=sell_embed)
 
+    # Add reactions
+    for idx in range(1, len(current_items) + 1):
+        await message.add_reaction(f"{idx}\u20E3")
+    if total_pages > 1:
+        await message.add_reaction("⬅️")
+        await message.add_reaction("➡️")
+    await message.add_reaction("❌")
+
+    def check(reaction, user):
+        return user == ctx.author and str(reaction.emoji) in [f"{i}\u20E3" for i in range(1, len(current_items) + 1)] + ["⬅️", "➡️", "❌"]
+
+    while True:
+        try:
+            reaction, user = await client.wait_for("reaction_add", timeout=60.0, check=check)
+            emoji = str(reaction.emoji)
+
+            if emoji == "⬅️" and current_page > 0:
+                current_page -= 1
+                sell_embed, current_items = create_sell_embed(current_page, item_per_page)
+                await message.edit(embed=sell_embed)
+            elif emoji == "➡️" and current_page < total_pages - 1:
+                current_page += 1
+                sell_embed, current_items = create_sell_embed(current_page, item_per_page)
+                await message.edit(embed=sell_embed)
+            elif emoji == "❌":
+                close_embed = discord.Embed(
+                    title="Sell menu closed",
+                    description="You have closed the sell menu.",
+                    color=discord.Color.red()
+                )
+                await message.edit(embed=close_embed)
+                await message.clear_reactions()
+                break
+            else:
+                idx = int(emoji[0]) - 1
+                selected_item = current_items[idx]
+                sell_price = sellable_items.get(selected_item.lower(), {}).get('sell_price', 0)
+                quantity = inventory[selected_item]
+
+                # Confirm sale
+                confirmation_embed = discord.Embed(
+                    title="Confirm sale",
+                    description=f"Do you want to sell **{quantity}x {selected_item}** for **{sell_price * quantity} coins**?",
+                    color=discord.Color.orange()
+                )
+                confirmation_embed.add_field(name="💰 Coins", value=f"Current: {character['coins']} | After Sale: {character['coins'] + (sell_price * quantity)}")
+                confirmation_message = await ctx.send(embed=confirmation_embed)
+                await confirmation_message.add_reaction("✅")
+                await confirmation_message.add_reaction("❌")
+
+                def confirm_check(reaction, user):
+                    return user == ctx.author and str(reaction.emoji) in ["✅", "❌"]
+
+                try:
+                    confirmation_reaction, _ = await client.wait_for("reaction_add", timeout=30.0, check=confirm_check)
+                    if str(confirmation_reaction.emoji) == "✅":
+                        character['coins'] += sell_price * quantity
+                        del inventory[selected_item]
+                        save_characters(user_id, character)
+
+                        success_embed = discord.Embed(
+                            title="Item sold!",
+                            description=f"✅ Sold **{quantity}x {selected_item}** for **{sell_price * quantity} coins**!",
+                            color=discord.Color.green()
+                        )
+                        success_embed.add_field(name="💰 Updated Coins", value=f"{character['coins']} coins", inline=False)
+                        await confirmation_message.edit(embed=success_embed)
+                    else:
+                        await confirmation_message.edit(content="❌ Sale canceled.", embed=None)
+                except asyncio.TimeoutError:
+                    await confirmation_message.edit(content="❌ Sale confirmation timed out.", embed=None)
+                finally:
+                    await confirmation_message.clear_reactions()
+
+            await message.remove_reaction(reaction.emoji, user)
+        except asyncio.TimeoutError:
+            await message.clear_reactions()
+            break
 
 @client.command()
 async def testlevelup(ctx):
