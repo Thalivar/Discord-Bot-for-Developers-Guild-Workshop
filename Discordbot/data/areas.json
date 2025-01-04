@@ -1,0 +1,526 @@
+
+
+{
+    "areas": {
+        "Forest": {
+            "description": "A dense forest filled with wildlife",
+            "required_level": 1,
+            "monsters": [
+                {
+                    "name": "Bunny",
+                    "health": 20,
+                    "attack": 11,
+                    "defense": 1,
+                    "xp_reward": 10,
+                    "rarity": "common",
+                    "loot_table": {
+                        "Carrot": {
+                            "chance": 90,
+                            "quantity": [1, 5],
+                            "guaranteed": true,
+                            "sell_price": 2
+                        },
+                        "Bunny Fur": {
+                            "chance": 10,
+                            "quantity": 1,
+                            "guaranteed": false,
+                            "sell_price": 5
+                        }
+                    }
+                },
+                {
+                    "name": "Wolf",
+                    "health": 20,
+                    "attack": 11,
+                    "defense": 2,
+                    "xp_reward": 20,
+                    "rarity": "common",
+                    "loot_table": {
+                        "Wolf Pelt": {
+                            "chance": 80,
+                            "quantity": [1, 2],
+                            "guaranteed": true,
+                            "sell_price": 3
+                        },
+                        "Wolf Bone": {
+                            "chance": 20,
+                            "quantity": 1,
+                            "guaranteed": false,
+                            "sell_price": 5
+                        }
+                    }
+                },
+                {
+                    "name": "Boar",
+                    "health": 20,
+                    "attack": 15,
+                    "defense": 2,
+                    "xp_reward": 30,
+                    "rarity": "common",
+                    "loot_table": {
+                        "Boar Pelts": {
+                            "chance": 50,
+                            "quantity": [1, 2],
+                            "guaranteed": true,
+                            "sell_price": 3
+                        },
+                        "Boar Tusk": {
+                            "chance": 20,
+                            "quantity": 1,
+                            "guaranteed": false,
+                            "sell_price": 5
+                        },
+                        "Boar Meat": {
+                            "chance": 30,
+                            "quantity": [1, 2],
+                            "guaranteed": true,
+                            "sell_price": 5
+                        }
+                    }
+                },
+                {
+                    "name": "Bear",
+                    "health": 30,
+                    "attack": 20,
+                    "defense": 5,
+                    "xp_reward": 50,
+                    "rarity": "uncommon",
+                    "loot_table": {
+                        "Bear Pelt": {
+                            "chance": 70,
+                            "quantity": [1, 2],
+                            "guaranteed": true,
+                            "sell_price": 5
+                        },
+                        "Bear Claw": {
+                            "chance": 30,
+                            "quantity": 1,
+                            "guaranteed": false,
+                            "sell_price": 10
+                        }
+                    }
+                },
+                {
+                    "name": "Treant",
+                    "health": 30,
+                    "attack": 11,
+                    "defense": 8,
+                    "xp_reward": 35,
+                    "rarity": "rare",
+                    "loot_table": {
+                        "Treant Bark": {
+                            "chance": 70,
+                            "quantity": [1, 2],
+                            "guaranteed": true,
+                            "sell_price": 5
+                        },
+                        "Treant Sap": {
+                            "chance": 20,
+                            "quantity": 1,
+                            "guaranteed": false,
+                            "sell_price": 10
+                        },
+                        "Treant Heart":{
+                            "chance": 10,
+                            "quantity": 1,
+                            "guaranteed": false,
+                            "sell_price": 15
+                        }
+                    }
+                },
+                {
+                    "name": "Wolf King",
+                    "health": 40,
+                    "attack": 20,
+                    "defense": 5,
+                    "xp_reward": 100,
+                    "rarity": "boss",
+                    "loot_table": {
+                        "Wolf King Pelt": {
+                            "chance": 70,
+                            "quantity": [1, 2],
+                            "guaranteed": true,
+                            "sell_price": 10
+                        },
+                        "Wolf King Fang": {
+                            "chance": 25,
+                            "quantity": 1,
+                            "guaranteed": false,
+                            "sell_price": 15
+                        },
+                        "Wolf Kings Essence": {
+                            "chance": 5,
+                            "quantity": 1,
+                            "guaranteed": false,
+                            "sell_price": 50
+                        }
+                    }
+                }
+            ]
+        },
+        "Cave": {
+            "description": "A dark cave system with dangerous creatures",
+            "required_level": 5,
+            "monsters": [
+                {
+                    "name": "Bat",
+                    "health": 80,
+                    "attack": 12,
+                    "defense": 5,
+                    "xp_reward": 50,
+                    "rarity": "common",
+                    "loot_table": {
+                        "Bat Wing": {
+                            "chance": 70,
+                            "quantity": [1, 2],
+                            "guaranteed": true,
+                            "sell_price": 10
+                        },
+                        "Bat Ear": {
+                            "chance": 30,
+                            "quantity": [1, 2],
+                            "guaranteed": false,
+                            "sell_price": 10
+                        }
+                    }
+                },
+                {
+                    "name": "Giant Spider",
+                    "health": 100,
+                    "attack": 15,
+                    "defense": 8,
+                    "xp_reward": 70,
+                    "rarity": "common",
+                    "loot_table": {
+                        "Spider Silk": {
+                            "chance": 70,
+                            "quantity": [1, 5],
+                            "guaranteed": true,
+                            "sell_price": 10
+                        },
+                        "Spider Fang": {
+                            "chance": 20,
+                            "quantity": 1,
+                            "guaranteed": false,
+                            "sell_price": 10
+                        },
+                        "Spider eyes": {
+                            "chance": 10,
+                            "quantity": [1, 8],
+                            "guaranteed": false,
+                            "sell_price": 15
+                        }
+                    }
+                },
+                {
+                    "name": "Goblin",
+                    "health": 150,
+                    "attack": 20,
+                    "defense": 10,
+                    "xp_reward": 100,
+                    "rarity": "uncommon",
+                    "loot_table": {
+                        "Goblin Ear": {
+                            "chance": 70,
+                            "quantity": [1, 2],
+                            "guaranteed": true,
+                            "sell_price": 10
+                        },
+                        "Goblin Tooth": {
+                            "chance": 20,
+                            "quantity": 1,
+                            "guaranteed": false,
+                            "sell_price": 10
+                        },
+                        "Goblin Hammer": {
+                            "chance": 10,
+                            "quantity": [1, 3],
+                            "guaranteed": false,
+                            "sell_price": 75,
+                            "type": "equipment",
+                            "slot": "weapon",
+                            "effect": {
+                                "attack": 15,
+                                "defense": 0
+                            },
+                            "description": "A crude but effective weapon used by the Goblins"
+                        }
+                    }
+                },
+                {
+                    "name": "Basilisk",
+                    "health": 200,
+                    "attack": 20,
+                    "defense": 18,
+                    "xp_reward": 175,
+                    "rarity": "rare",
+                    "loot_table": {
+                        "Basilisk Scale": {
+                            "chance": 70,
+                            "quantity": [1, 2],
+                            "guaranteed": true,
+                            "sell_price": 15
+                        },
+                        "Basilisk Fang": {
+                            "chance": 30,
+                            "quantity": 1,
+                            "guaranteed": false,
+                            "sell_price": 20
+                        }
+                    }
+                },
+                {
+                    "name": "Mimic",
+                    "health": 150,
+                    "attack": 45,
+                    "defense": 15,
+                    "xp_reward": 200,
+                    "rarity": "rare",
+                    "loot_table": {
+                        "Mixed Gems": {
+                            "chance": 70,
+                            "quantity": [1, 8],
+                            "guaranteed": true,
+                            "sell_price": 50
+                        },
+                        "Diamonds": {
+                            "chance": 20,
+                            "quantity": [1, 4],
+                            "guaranteed": false,
+                            "sell_price": 25
+                        },
+                        "Mimic Teeth": {
+                            "chance": 10,
+                            "quantity": [1, 3],
+                            "guaranteed": false,
+                            "sell_price": 25
+                        }
+                    }
+                },
+                {
+                    "name": "Gostir The Three Headed Dragon",
+                    "health": 300,
+                    "attack": 50,
+                    "defense": 20,
+                    "xp_reward": 500,
+                    "rarity": "boss",
+                    "loot_table": {
+                        "Gostir's Scale": {
+                            "chance": 70,
+                            "quantity": [1, 5],
+                            "guaranteed": true,
+                            "sell_price": 25
+                        },
+                        "Gostir's Fang": {
+                            "chance": 25,
+                            "quantity": [1, 2],
+                            "guaranteed": false,
+                            "sell_price": 30
+                        },
+                        "The Dragon Slayer": {
+                            "chance": 5,
+                            "quantity": 1,
+                            "guaranteed": false,
+                            "sell_price": 100,
+                            "type": "equipment",
+                            "slot": "weapon",
+                            "effect": {
+                                "attack": 30,
+                                "defense": 0
+                            },
+                            "description": "A legendary sword forged from the Eternal Ember, capable of slaying even the mightiest of foes"  
+                        }
+                    }
+                }
+            ]
+        },
+        "Desert": {
+            "description": "A vast desert with powerful foes",
+            "required_level": 10,
+            "monsters": [
+                {
+                    "name": "Giant Scorpions",
+                    "health": 150,
+                    "attack": 40,
+                    "defense": 10,
+                    "xp_reward": 250,
+                    "rarity": "common",
+                    "loot_table": {
+                        "Stinger": {
+                            "chance": 79,
+                            "quantity": [1, 3],
+                            "guaranteed": true,
+                            "sell_price": 10
+                        },
+                        "Scorpion Claw": {
+                            "chance": 20,
+                            "quantity": [1, 2],
+                            "guaranteed": false,
+                            "sell_price": 10
+                        }
+                    }
+                },
+                {
+                    "name": "Mummy",
+                    "health": 200,
+                    "attack": 50,
+                    "defense": 15,
+                    "xp_reward": 300,
+                    "rarity": "common",
+                    "loot_table": {
+                        "Mummy Bandages": {
+                            "chance": 70,
+                            "quantity": [1, 2],
+                            "guaranteed": true,
+                            "sell_price": 15
+                        },
+                        "Mummy Dust": {
+                            "chance": 20,
+                            "quantity": 1,
+                            "guaranteed": false,
+                            "sell_price": 20
+                        },
+                        "Mummy's Curse": {
+                            "chance": 10,
+                            "quantity": 1,
+                            "guaranteed": false,
+                            "sell_price": 25
+                        }
+                    }
+                },
+                {
+                    "name": "Giant Lizard",
+                    "health": 250,
+                    "attack": 60,
+                    "defense": 20,
+                    "xp_reward": 350,
+                    "rarity": "uncommon",
+                    "loot_table": {
+                        "Lizard Scale": {
+                            "chance": 70,
+                            "quantity": [1, 2],
+                            "guaranteed": true,
+                            "sell_price": 20
+                        },
+                        "Lizard Tail": {
+                            "chance": 30,
+                            "quantity": 1,
+                            "guaranteed": false,
+                            "sell_price": 25
+                        }
+                    }
+                },
+                {
+                    "name": "Group of Bandits",
+                    "health": 300,
+                    "attack": 70,
+                    "defense": 25,
+                    "xp_reward": 400,
+                    "rarity": "uncommon",
+                    "loot_table": {
+                        "Bandit Mask": {
+                            "chance": 70,
+                            "quantity": [1, 2],
+                            "guaranteed": true,
+                            "sell_price": 20
+                        },
+                        "Bandit Sword": {
+                            "chance": 30,
+                            "quantity": 1,
+                            "guaranteed": false,
+                            "sell_price": 25,
+                            "type": "equipment",
+                            "slot": "weapon",
+                            "effect": {
+                                "attack": 20,
+                                "defense": 0
+                            },
+                            "description": "A sword used by the Bandits to rob and plunder"
+                        }
+                    }
+                },
+                {
+                    "name": "Air Elemental",
+                    "health": 200,
+                    "attack": 80,
+                    "defense": 30,
+                    "xp_reward": 450,
+                    "rarity": "rare",
+                    "loot_table": {
+                        "Air Essence": {
+                            "chance": 70,
+                            "quantity": [1, 2],
+                            "guaranteed": true,
+                            "sell_price": 25
+                        },
+                        "Air Crystal": {
+                            "chance": 30,
+                            "quantity": 1,
+                            "guaranteed": false,
+                            "sell_price": 30
+                        }
+                    }
+                },
+                {
+                    "name": "Djinn",
+                    "health": 400,
+                    "attack": 100,
+                    "defense": 40,
+                    "xp_reward": 600,
+                    "rarity": "rare",
+                    "loot_table": {
+                        "Djinn's Lamp": {
+                            "chance": 70,
+                            "quantity": 1,
+                            "guaranteed": true,
+                            "sell_price": 50
+                        },
+                        "Djinn's Ring": {
+                            "chance": 30,
+                            "quantity": 1,
+                            "guaranteed": false,
+                            "sell_price": 50
+                        }
+                    }
+                },
+                {
+                    "name": "The Sand King",
+                    "health": 500,
+                    "attack": 150,
+                    "defense": 50,
+                    "xp_reward": 1000,
+                    "rarity": "boss",
+                    "loot_table": {
+                        "Sand King's Crown": {
+                            "chance": 70,
+                            "quantity": 1,
+                            "guaranteed": true,
+                            "sell_price": 50,
+                            "type": "equipment",
+                            "slot": "helmet",
+                            "effect": {
+                                "attack": 0,
+                                "defense": 20,
+                                "max_health": 50
+                            },
+                            "description": "A crown worn by the Sand King, said to grant the wearer the power of the desert"
+                        },
+                        "Sand King's Scepter": {
+                            "chance": 30,
+                            "quantity": 1,
+                            "guaranteed": false,
+                            "sell_price": 50,
+                            "type": "equipment",
+                            "slot": "weapon",
+                            "effect": {
+                                "attack": 30,
+                                "defense": 0
+                            },
+                            "description": "A scepter used by the Sand King to command the desert winds"
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}
